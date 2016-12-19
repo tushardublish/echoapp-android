@@ -1,8 +1,9 @@
 <resources>
-    <string name="app_name">EchoApp</string>
+    <string name="app_name">Echo</string>
     <string name="sign_out">Sign Out</string>
     <string name="send_button_label">Send</string>
     <string name="facebook_application_id" translatable="false">1282394848490709</string>
     <!-- Facebook Application ID, prefixed by 'fb'.  Enables Chrome Custom tabs. -->
     <string name="facebook_login_protocol_scheme" translatable="false">fb1282394848490709</string>
+    <string name="title_activity_main">MainActivity</string>
 </resources>
