@@ -54,7 +54,8 @@ public class ChatActivity extends AppCompatActivity {
     private String mUsername;
 
     private FirebaseDatabase mFirebaseDatabase;
-    private DatabaseReference mMessagesDatabaseReference;
+    private DatabaseReference mMessagesDbRef;
+    private DatabaseReference mUsersDbRef;
     private ChildEventListener mChildEventListener;
     private FirebaseAuth mFirebaseAuth;
     private FirebaseAuth.AuthStateListener mAuthStateListener;
@@ -73,7 +74,8 @@ public class ChatActivity extends AppCompatActivity {
         mFirebaseAuth = FirebaseAuth.getInstance();
         mFirebaseStorage = FirebaseStorage.getInstance();
 
-        mMessagesDatabaseReference = mFirebaseDatabase.getReference().child("messages");
+        mMessagesDbRef = mFirebaseDatabase.getReference().child("messages");
+        mUsersDbRef = mFirebaseDatabase.getReference().child("users");
         mChatPhotosStorageReference = mFirebaseStorage.getReference().child("chat_photos");
 
         // Initialize references to views
@@ -129,7 +131,7 @@ public class ChatActivity extends AppCompatActivity {
             public void onClick(View view) {
                 // TODO: Send messages on click
                 FriendlyMessage friendlyMessage = new FriendlyMessage(mMessageEditText.getText().toString(), mUsername, null);
-                mMessagesDatabaseReference.push().setValue(friendlyMessage);
+                mMessagesDbRef.push().setValue(friendlyMessage);
 
                 // Clear input box
                 mMessageEditText.setText("");
@@ -166,6 +168,9 @@ public class ChatActivity extends AppCompatActivity {
         if (requestCode == RC_SIGN_IN) {
             if (resultCode == RESULT_OK) {
                 // Sign-in succeeded, set up the UI
+                FirebaseUser user = mFirebaseAuth.getCurrentUser();
+                UserProfile userProfile = new UserProfile(user.getEmail(), user.getDisplayName(), user.getPhotoUrl().toString());
+                mUsersDbRef.child(user.getUid()).setValue(userProfile);
                 Toast.makeText(this, "Signed in!", Toast.LENGTH_SHORT).show();
             } else if (resultCode == RESULT_CANCELED) {
                 // Sign in was canceled by the user, finish the activity
@@ -187,7 +192,7 @@ public class ChatActivity extends AppCompatActivity {
 
                             // Set the download URL to the message box, so that the user can send it to the database
                             FriendlyMessage friendlyMessage = new FriendlyMessage(null, mUsername, downloadUrl.toString());
-                            mMessagesDatabaseReference.push().setValue(friendlyMessage);
+                            mMessagesDbRef.push().setValue(friendlyMessage);
                         }
                     });
         }
@@ -252,13 +257,13 @@ public class ChatActivity extends AppCompatActivity {
                 public void onChildMoved(DataSnapshot dataSnapshot, String s) {}
                 public void onCancelled(DatabaseError databaseError) {}
             };
-            mMessagesDatabaseReference.addChildEventListener(mChildEventListener);
+            mMessagesDbRef.addChildEventListener(mChildEventListener);
         }
     }
 
     private void detachDatabaseReadListener() {
         if (mChildEventListener != null) {
-            mMessagesDatabaseReference.removeEventListener(mChildEventListener);
+            mMessagesDbRef.removeEventListener(mChildEventListener);
             mChildEventListener = null;
         }
     }
