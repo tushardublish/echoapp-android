@@ -168,9 +168,6 @@ public class ChatActivity extends AppCompatActivity {
         if (requestCode == RC_SIGN_IN) {
             if (resultCode == RESULT_OK) {
                 // Sign-in succeeded, set up the UI
-                FirebaseUser user = mFirebaseAuth.getCurrentUser();
-                UserProfile userProfile = new UserProfile(user.getEmail(), user.getDisplayName(), user.getPhotoUrl().toString());
-                mUsersDbRef.child(user.getUid()).setValue(userProfile);
                 Toast.makeText(this, "Signed in!", Toast.LENGTH_SHORT).show();
             } else if (resultCode == RESULT_CANCELED) {
                 // Sign in was canceled by the user, finish the activity
@@ -214,24 +211,6 @@ public class ChatActivity extends AppCompatActivity {
         detachDatabaseReadListener();
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.main_menu, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.sign_out_menu:
-                AuthUI.getInstance().signOut(this);
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
-        }
-    }
-
     private void onSignedInInitialize(String username) {
         mUsername = username;
         attachDatabaseReadListener();
@@ -265,6 +244,24 @@ public class ChatActivity extends AppCompatActivity {
         if (mChildEventListener != null) {
             mMessagesDbRef.removeEventListener(mChildEventListener);
             mChildEventListener = null;
+        }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.main_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.sign_out_menu:
+                AuthUI.getInstance().signOut(this);
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
         }
     }
 }
