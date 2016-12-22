@@ -17,6 +17,7 @@ package in.letsecho.echoapp;
 
 public class UserProfile {
 
+    private String uid;
     private String email;
     private String displayName;
     private String photoUrl;
@@ -24,11 +25,16 @@ public class UserProfile {
     public UserProfile() {
     }
 
-    public UserProfile(String email, String displayName, String photoUrl) {
+    public UserProfile(String uid, String email, String displayName, String photoUrl) {
+        this.uid = uid;
         this.email = email;
         this.displayName = displayName;
         this.photoUrl = photoUrl;
     }
+
+    public String getUID() { return uid; }
+
+    public void setUID(String uid) { this.uid = uid; }
 
     public String getEmail() {
         return email;
@@ -38,9 +44,7 @@ public class UserProfile {
         this.email = email;
     }
 
-    public String getName() {
-        return displayName;
-    }
+    public String getName() { return displayName; }
 
     public void setName(String name) {
         this.displayName = name;

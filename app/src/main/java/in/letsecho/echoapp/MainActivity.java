@@ -8,6 +8,8 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -69,6 +71,15 @@ public class MainActivity extends AppCompatActivity {
         List<UserProfile> persons = new ArrayList<>();
         mPersonAdapter = new PersonAdapter(this, R.layout.item_person, persons);
         mPersonListView.setAdapter(mPersonAdapter);
+        mPersonListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                UserProfile person = mPersonAdapter.getItem(position);
+                Intent intent = new Intent(getApplicationContext(), ChatActivity.class)
+                        .putExtra(Intent.EXTRA_USER, person.getUID());
+                startActivity(intent);
+            }
+        });
 
         // Initialize progress bar
         mProgressBar.setVisibility(ProgressBar.INVISIBLE);
@@ -104,7 +115,7 @@ public class MainActivity extends AppCompatActivity {
                 // Sign-in succeeded, set up the UI
                 // Saving user info in DB. To do: Should not happen on every sign in
                 FirebaseUser user = mFirebaseAuth.getCurrentUser();
-                UserProfile userProfile = new UserProfile(user.getEmail(), user.getDisplayName(), user.getPhotoUrl().toString());
+                UserProfile userProfile = new UserProfile(user.getUid(), user.getEmail(), user.getDisplayName(), user.getPhotoUrl().toString());
                 mUsersDbRef.child(user.getUid()).setValue(userProfile);
                 Toast.makeText(this, "Signed in!", Toast.LENGTH_SHORT).show();
             } else if (resultCode == RESULT_CANCELED) {

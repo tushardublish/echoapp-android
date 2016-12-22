@@ -11,7 +11,8 @@
         android:id="@+id/displayImageView"
         android:layout_width="@dimen/user_pic_width"
         android:layout_height="@dimen/user_pic_height"
-        android:adjustViewBounds="true" />
+        android:adjustViewBounds="true"
+        android:cropToPadding="true" />
 
     <TextView
         android:id="@+id/nameTextView"
@@ -19,6 +20,7 @@
         android:layout_height="wrap_content"
         android:layout_weight="0"
         android:textAppearance="?android:attr/textAppearanceLarge"
-        tools:text="Name" />
+        tools:text="Name"
+        android:gravity="center_vertical" />
 
 </LinearLayout>

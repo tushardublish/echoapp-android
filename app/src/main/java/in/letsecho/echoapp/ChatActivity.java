@@ -28,6 +28,7 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
@@ -54,9 +55,9 @@ public class ChatActivity extends AppCompatActivity {
     private String mUsername;
 
     private FirebaseDatabase mFirebaseDatabase;
-    private DatabaseReference mMessagesDbRef;
-    private DatabaseReference mUsersDbRef;
-    private ChildEventListener mChildEventListener;
+    private DatabaseReference mMessagesDbRef, mSecondaryUserDbRef;
+    private ChildEventListener messageEventListener;
+    private ValueEventListener secondaryUserEventListener;
     private FirebaseAuth mFirebaseAuth;
     private FirebaseAuth.AuthStateListener mAuthStateListener;
     private FirebaseStorage mFirebaseStorage;
@@ -75,7 +76,6 @@ public class ChatActivity extends AppCompatActivity {
         mFirebaseStorage = FirebaseStorage.getInstance();
 
         mMessagesDbRef = mFirebaseDatabase.getReference().child("messages");
-        mUsersDbRef = mFirebaseDatabase.getReference().child("users");
         mChatPhotosStorageReference = mFirebaseStorage.getReference().child("chat_photos");
 
         // Initialize references to views
@@ -89,6 +89,14 @@ public class ChatActivity extends AppCompatActivity {
         List<FriendlyMessage> friendlyMessages = new ArrayList<>();
         mMessageAdapter = new MessageAdapter(this, R.layout.item_message, friendlyMessages);
         mMessageListView.setAdapter(mMessageAdapter);
+
+        // Initialize Intent
+        Intent intent = getIntent();
+        if (intent != null && intent.hasExtra(Intent.EXTRA_USER))
+        {
+            String person_id = intent.getStringExtra(Intent.EXTRA_USER);
+            mSecondaryUserDbRef = mFirebaseDatabase.getReference().child("users").child(person_id);
+        }
 
         // Initialize progress bar
         mProgressBar.setVisibility(ProgressBar.INVISIBLE);
@@ -223,8 +231,8 @@ public class ChatActivity extends AppCompatActivity {
     }
 
     private void attachDatabaseReadListener() {
-        if (mChildEventListener == null) {
-            mChildEventListener = new ChildEventListener() {
+        if (messageEventListener == null) {
+            messageEventListener = new ChildEventListener() {
                 @Override
                 public void onChildAdded(DataSnapshot dataSnapshot, String s) {
                     FriendlyMessage friendlyMessage = dataSnapshot.getValue(FriendlyMessage.class);
@@ -236,14 +244,32 @@ public class ChatActivity extends AppCompatActivity {
                 public void onChildMoved(DataSnapshot dataSnapshot, String s) {}
                 public void onCancelled(DatabaseError databaseError) {}
             };
-            mMessagesDbRef.addChildEventListener(mChildEventListener);
+            mMessagesDbRef.addChildEventListener(messageEventListener);
+        }
+
+        if (secondaryUserEventListener == null) {
+            secondaryUserEventListener = new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    UserProfile secondaryUser = dataSnapshot.getValue(UserProfile.class);
+                    setTitle(secondaryUser.getName());
+                };
+                @Override
+                public void onCancelled(DatabaseError databaseError) {};
+            };
+            mSecondaryUserDbRef.addValueEventListener(secondaryUserEventListener);
         }
     }
 
     private void detachDatabaseReadListener() {
-        if (mChildEventListener != null) {
-            mMessagesDbRef.removeEventListener(mChildEventListener);
-            mChildEventListener = null;
+        if (messageEventListener != null) {
+            mMessagesDbRef.removeEventListener(messageEventListener);
+            messageEventListener = null;
+        }
+
+        if (secondaryUserEventListener != null) {
+            mSecondaryUserDbRef.removeEventListener(secondaryUserEventListener);
+            secondaryUserEventListener = null;
         }
     }
 
