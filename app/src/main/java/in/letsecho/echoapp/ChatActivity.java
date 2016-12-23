@@ -28,6 +28,7 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
@@ -52,12 +53,15 @@ public class ChatActivity extends AppCompatActivity {
     private EditText mMessageEditText;
     private Button mSendButton;
 
-    private String mUsername;
+    private FirebaseUser currentUser;
+    private String mUsername, secondaryUid;
+    private String chatId;
 
     private FirebaseDatabase mFirebaseDatabase;
-    private DatabaseReference mMessagesDbRef, mSecondaryUserDbRef;
+    private DatabaseReference mChatsDbRef, mSecondaryUserDbRef, currentChatDbRef;
+    private DatabaseReference currentUserChatQuery;
     private ChildEventListener messageEventListener;
-    private ValueEventListener secondaryUserEventListener;
+    private ValueEventListener secondaryUserEventListener, currentUserChatsEventListener;
     private FirebaseAuth mFirebaseAuth;
     private FirebaseAuth.AuthStateListener mAuthStateListener;
     private FirebaseStorage mFirebaseStorage;
@@ -74,8 +78,7 @@ public class ChatActivity extends AppCompatActivity {
         mFirebaseDatabase = FirebaseDatabase.getInstance();
         mFirebaseAuth = FirebaseAuth.getInstance();
         mFirebaseStorage = FirebaseStorage.getInstance();
-
-        mMessagesDbRef = mFirebaseDatabase.getReference().child("messages");
+        mChatsDbRef = mFirebaseDatabase.getReference().child("chats");
         mChatPhotosStorageReference = mFirebaseStorage.getReference().child("chat_photos");
 
         // Initialize references to views
@@ -86,16 +89,16 @@ public class ChatActivity extends AppCompatActivity {
         mSendButton = (Button) findViewById(R.id.sendButton);
 
         // Initialize message ListView and its adapter
-        List<FriendlyMessage> friendlyMessages = new ArrayList<>();
-        mMessageAdapter = new MessageAdapter(this, R.layout.item_message, friendlyMessages);
+        List<ChatMessage> chatMessages = new ArrayList<>();
+        mMessageAdapter = new MessageAdapter(this, R.layout.item_message, chatMessages);
         mMessageListView.setAdapter(mMessageAdapter);
 
         // Initialize Intent
         Intent intent = getIntent();
         if (intent != null && intent.hasExtra(Intent.EXTRA_USER))
         {
-            String person_id = intent.getStringExtra(Intent.EXTRA_USER);
-            mSecondaryUserDbRef = mFirebaseDatabase.getReference().child("users").child(person_id);
+            secondaryUid = intent.getStringExtra(Intent.EXTRA_USER);
+            mSecondaryUserDbRef = mFirebaseDatabase.getReference().child("users").child(secondaryUid);
         }
 
         // Initialize progress bar
@@ -138,21 +141,25 @@ public class ChatActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 // TODO: Send messages on click
-                FriendlyMessage friendlyMessage = new FriendlyMessage(mMessageEditText.getText().toString(), mUsername, null);
-                mMessagesDbRef.push().setValue(friendlyMessage);
+                ChatMessage chatMessage = new ChatMessage(mMessageEditText.getText().toString(), mUsername, null);
+                currentChatDbRef.push().setValue(chatMessage);
 
                 // Clear input box
                 mMessageEditText.setText("");
             }
         });
 
+        InitializeAuthListener();
+    }
+
+    private void InitializeAuthListener() {
         mAuthStateListener = new FirebaseAuth.AuthStateListener() {
             @Override
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
-                FirebaseUser user = firebaseAuth.getCurrentUser();
-                if (user != null) {
+                currentUser = firebaseAuth.getCurrentUser();
+                if (currentUser != null) {
                     // User is signed in
-                    onSignedInInitialize(user.getDisplayName());
+                    onSignedInInitialize(currentUser.getDisplayName());
                 } else {
                     // User is signed out
                     onSignedOutCleanup();
@@ -176,6 +183,7 @@ public class ChatActivity extends AppCompatActivity {
         if (requestCode == RC_SIGN_IN) {
             if (resultCode == RESULT_OK) {
                 // Sign-in succeeded, set up the UI
+                currentUser = mFirebaseAuth.getCurrentUser();
                 Toast.makeText(this, "Signed in!", Toast.LENGTH_SHORT).show();
             } else if (resultCode == RESULT_CANCELED) {
                 // Sign in was canceled by the user, finish the activity
@@ -196,8 +204,8 @@ public class ChatActivity extends AppCompatActivity {
                             Uri downloadUrl = taskSnapshot.getDownloadUrl();
 
                             // Set the download URL to the message box, so that the user can send it to the database
-                            FriendlyMessage friendlyMessage = new FriendlyMessage(null, mUsername, downloadUrl.toString());
-                            mMessagesDbRef.push().setValue(friendlyMessage);
+                            ChatMessage chatMessage = new ChatMessage(null, mUsername, downloadUrl.toString());
+                            currentChatDbRef.push().setValue(chatMessage);
                         }
                     });
         }
@@ -206,6 +214,9 @@ public class ChatActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        if (mAuthStateListener == null) {
+            InitializeAuthListener();
+        }
         mFirebaseAuth.addAuthStateListener(mAuthStateListener);
     }
 
@@ -231,21 +242,6 @@ public class ChatActivity extends AppCompatActivity {
     }
 
     private void attachDatabaseReadListener() {
-        if (messageEventListener == null) {
-            messageEventListener = new ChildEventListener() {
-                @Override
-                public void onChildAdded(DataSnapshot dataSnapshot, String s) {
-                    FriendlyMessage friendlyMessage = dataSnapshot.getValue(FriendlyMessage.class);
-                    mMessageAdapter.add(friendlyMessage);
-                }
-
-                public void onChildChanged(DataSnapshot dataSnapshot, String s) {}
-                public void onChildRemoved(DataSnapshot dataSnapshot) {}
-                public void onChildMoved(DataSnapshot dataSnapshot, String s) {}
-                public void onCancelled(DatabaseError databaseError) {}
-            };
-            mMessagesDbRef.addChildEventListener(messageEventListener);
-        }
 
         if (secondaryUserEventListener == null) {
             secondaryUserEventListener = new ValueEventListener() {
@@ -259,11 +255,54 @@ public class ChatActivity extends AppCompatActivity {
             };
             mSecondaryUserDbRef.addValueEventListener(secondaryUserEventListener);
         }
+
+        currentUserChatQuery = mChatsDbRef.child("user_chats").child(currentUser.getUid()).child(secondaryUid);
+        if (currentUserChatsEventListener == null) {
+            currentUserChatsEventListener = new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    chatId = dataSnapshot.getValue(String.class);
+                    //New Chat
+                    if (chatId == null) {
+                        currentChatDbRef = mChatsDbRef.child("messages").push();
+                        currentChatDbRef.addChildEventListener(messageEventListener);
+                        chatId = currentChatDbRef.getKey();
+                        currentChatDbRef.setValue(1);
+                        mChatsDbRef.child("user_chats").child(currentUser.getUid()).child(secondaryUid).setValue(chatId);
+                        mChatsDbRef.child("user_chats").child(secondaryUid).child(currentUser.getUid()).setValue(chatId);
+                    }
+                    //Existing Chat
+                    if (currentChatDbRef == null) {
+                        currentChatDbRef = mChatsDbRef.child("messages").child(chatId);
+                        currentChatDbRef.addChildEventListener(messageEventListener);
+                    }
+                };
+                @Override
+                public void onCancelled(DatabaseError databaseError) {};
+            };
+            currentUserChatQuery.addValueEventListener(currentUserChatsEventListener);
+        }
+
+
+        if (messageEventListener == null) {
+            messageEventListener = new ChildEventListener() {
+                @Override
+                public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+                    ChatMessage chatMessage = dataSnapshot.getValue(ChatMessage.class);
+                    mMessageAdapter.add(chatMessage);
+                }
+
+                public void onChildChanged(DataSnapshot dataSnapshot, String s) {}
+                public void onChildRemoved(DataSnapshot dataSnapshot) {}
+                public void onChildMoved(DataSnapshot dataSnapshot, String s) {}
+                public void onCancelled(DatabaseError databaseError) {}
+            };
+        }
     }
 
     private void detachDatabaseReadListener() {
         if (messageEventListener != null) {
-            mMessagesDbRef.removeEventListener(messageEventListener);
+            mChatsDbRef.removeEventListener(messageEventListener);
             messageEventListener = null;
         }
 
