@@ -26,6 +26,7 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
@@ -81,6 +82,8 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        String refreshedToken = FirebaseInstanceId.getInstance().getToken();
+
         // Initialize progress bar
         mProgressBar.setVisibility(ProgressBar.INVISIBLE);
 
@@ -99,7 +102,7 @@ public class MainActivity extends AppCompatActivity {
                                     .createSignInIntentBuilder()
                                     .setIsSmartLockEnabled(false)
                                     .setProviders(
-                                            AuthUI.GOOGLE_PROVIDER,
+//                                            AuthUI.GOOGLE_PROVIDER,
                                             AuthUI.FACEBOOK_PROVIDER)
                                     .build(),
                             RC_SIGN_IN);
