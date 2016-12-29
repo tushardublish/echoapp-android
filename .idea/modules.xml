@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/appengine-backend/appengine-backend.iml" filepath="$PROJECT_DIR$/appengine-backend/appengine-backend.iml" />
       <module fileurl="file://$PROJECT_DIR$/echoapp-android.iml" filepath="$PROJECT_DIR$/echoapp-android.iml" />
     </modules>
   </component>
