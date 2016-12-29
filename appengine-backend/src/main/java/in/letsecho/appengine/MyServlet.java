@@ -18,6 +18,10 @@ import com.google.firebase.database.ValueEventListener;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.http.*;
@@ -29,7 +33,6 @@ public class MyServlet extends HttpServlet {
     private DatabaseReference rootDbRef;
     private DatabaseReference currentChatDbRef;
     private ChildEventListener messageEventListener;
-    private MessageNotifier messageNotifier;
 
     @Override
     public void init(ServletConfig config) {
@@ -43,13 +46,27 @@ public class MyServlet extends HttpServlet {
         FirebaseApp.initializeApp(options);
         FirebaseDatabase firebaseDb = FirebaseDatabase.getInstance();
         rootDbRef = firebaseDb.getReference();
+//        SendMessageNotifications();
+//        messageNotifier = new MessageNotifier(rootDbRef);
+//        messageNotifier.start();
+    }
 
+    private void SendMessageNotifications() {
         currentChatDbRef = rootDbRef.child("chats").child("messages").child("-KZfWIgv3hb__PcaWNtQ");
         if (messageEventListener == null) {
             messageEventListener = new ChildEventListener() {
                 @Override
                 public void onChildAdded(DataSnapshot dataSnapshot, String s) {
                     ChatMessage chatMessage = dataSnapshot.getValue(ChatMessage.class);
+                    String messageKey = dataSnapshot.getKey();
+                    if(chatMessage.getNotified() != Boolean.TRUE) {
+                        //Send Notification
+
+
+                        //Update Status
+                        chatMessage.setNotified(Boolean.TRUE);
+                        currentChatDbRef.child(messageKey).setValue(chatMessage);
+                    }
                 }
 
                 public void onChildChanged(DataSnapshot dataSnapshot, String s) {}
@@ -59,10 +76,30 @@ public class MyServlet extends HttpServlet {
             };
             currentChatDbRef.addChildEventListener(messageEventListener);
         }
+    }
 
-//        messageNotifier = new MessageNotifier(rootDbRef);
-////        messageNotifier.setPriority(Thread.MIN_PRIORITY);
-//        messageNotifier.start();
+    //One time script to extracr info from user_chats section and populate info section in chats
+    private void UpdateChatInfo() {
+        rootDbRef.child("chats/user_chats").addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                for(DataSnapshot user1: dataSnapshot.getChildren()) {
+                    String uid1 = user1.getKey();
+                    for(DataSnapshot user2: user1.getChildren()) {
+                        String uid2 = user2.getKey();
+                        String chatId = user2.getValue(String.class);
+                        DatabaseReference chatInfoDbRef = rootDbRef.child("chats/info").child(chatId).child("users");
+                        Map<String, Object> users = new HashMap<String, Object>();
+                        users.put(uid1, Boolean.TRUE);
+                        users.put(uid2, Boolean.TRUE);
+                        chatInfoDbRef.setValue(users);
+                    }
+                }
+            }
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+            }
+        });
     }
 
     @Override

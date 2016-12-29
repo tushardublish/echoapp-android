@@ -20,6 +20,7 @@ public class ChatMessage {
     private String text;
     private String name;
     private String photoUrl;
+    private Boolean notified;
 
     public ChatMessage() {
     }
@@ -53,4 +54,8 @@ public class ChatMessage {
     public void setPhotoUrl(String photoUrl) {
         this.photoUrl = photoUrl;
     }
+
+    public Boolean getNotified() { return notified; }
+
+    public void setNotified(Boolean notified) { this.notified = notified; }
 }

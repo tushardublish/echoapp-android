@@ -84,8 +84,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        String refreshedToken = FirebaseInstanceId.getInstance().getToken();
-
         // Initialize progress bar
         mProgressBar.setVisibility(ProgressBar.INVISIBLE);
 
@@ -111,6 +109,11 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         };
+
+        //To insert Insatance id for exisitn users. Can be removed after 1st Feb 2017.
+        MyFirebaseInstanceIDService firebaseInstance = new MyFirebaseInstanceIDService();
+        String refreshedToken = FirebaseInstanceId.getInstance().getToken();
+        firebaseInstance.sendRegistrationToServer(refreshedToken);
     }
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {

@@ -35,7 +35,9 @@ import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import in.letsecho.library.ChatMessage;
 import in.letsecho.library.UserProfile;
@@ -267,14 +269,18 @@ public class ChatActivity extends AppCompatActivity {
                     chatId = dataSnapshot.getValue(String.class);
                     //New Chat
                     if (chatId == null) {
-                        currentChatDbRef = mChatsDbRef.child("messages").push();
-                        currentChatDbRef.addChildEventListener(messageEventListener);
-                        chatId = currentChatDbRef.getKey();
-                        currentChatDbRef.setValue(1);
+                        //Insert Info
+                        DatabaseReference chatInfoDbRef = mChatsDbRef.child("info").push();
+                        Map<String, Object> users = new HashMap<String, Object>();
+                        users.put(currentUser.getUid(), Boolean.TRUE);
+                        users.put(secondaryUid, Boolean.TRUE);
+                        chatInfoDbRef.child("users").setValue(users);
+                        //Insert User Chats
+                        chatId = chatInfoDbRef.getKey();
                         mChatsDbRef.child("user_chats").child(currentUser.getUid()).child(secondaryUid).setValue(chatId);
                         mChatsDbRef.child("user_chats").child(secondaryUid).child(currentUser.getUid()).setValue(chatId);
                     }
-                    //Existing Chat
+
                     if (currentChatDbRef == null) {
                         currentChatDbRef = mChatsDbRef.child("messages").child(chatId);
                         currentChatDbRef.addChildEventListener(messageEventListener);

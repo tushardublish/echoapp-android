@@ -21,6 +21,7 @@ public class UserProfile {
     private String email;
     private String displayName;
     private String photoUrl;
+    private String instanceId;
 
     public UserProfile() {
     }
@@ -57,4 +58,8 @@ public class UserProfile {
     public void setPhotoUrl(String photoUrl) {
         this.photoUrl = photoUrl;
     }
+
+    public String getInstanceId() { return instanceId; }
+
+    public void setInstanceId(String instanceId) { this. instanceId = instanceId; }
 }
