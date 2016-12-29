@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package in.letsecho.echoapp;
+package in.letsecho.library;
 
 public class ChatMessage {
 

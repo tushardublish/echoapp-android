@@ -12,6 +12,8 @@ import com.bumptech.glide.Glide;
 
 import java.util.List;
 
+import in.letsecho.library.ChatMessage;
+
 public class MessageAdapter extends ArrayAdapter<ChatMessage> {
     public MessageAdapter(Context context, int resource, List<ChatMessage> objects) {
         super(context, resource, objects);

@@ -34,6 +34,8 @@ import com.google.firebase.storage.UploadTask;
 import java.util.ArrayList;
 import java.util.List;
 
+import in.letsecho.library.UserProfile;
+
 public class MainActivity extends AppCompatActivity {
 
     public static final String ANONYMOUS = "anonymous";

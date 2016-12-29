@@ -1,1 +1,1 @@
-include ':app',':appengine-backend'
+include ':app', ':appengine-backend', ':library'

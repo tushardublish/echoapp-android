@@ -22,6 +22,8 @@ import java.io.InputStream;
 import javax.servlet.ServletConfig;
 import javax.servlet.http.*;
 
+import in.letsecho.library.ChatMessage;
+
 public class MyServlet extends HttpServlet {
 
     private DatabaseReference rootDbRef;
@@ -47,7 +49,7 @@ public class MyServlet extends HttpServlet {
             messageEventListener = new ChildEventListener() {
                 @Override
                 public void onChildAdded(DataSnapshot dataSnapshot, String s) {
-                    String chat = "found";
+                    ChatMessage chatMessage = dataSnapshot.getValue(ChatMessage.class);
                 }
 
                 public void onChildChanged(DataSnapshot dataSnapshot, String s) {}

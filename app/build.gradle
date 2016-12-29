@@ -40,5 +40,6 @@ dependencies {
     compile 'com.google.firebase:firebase-messaging:10.0.1'
     // FirebaseUI Auth only
     compile 'com.firebaseui:firebase-ui-auth:1.0.1'
+    compile project(path: ':library')
 }
 apply plugin: 'com.google.gms.google-services'

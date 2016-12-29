@@ -13,6 +13,8 @@ import com.twitter.sdk.android.core.models.User;
 
 import java.util.List;
 
+import in.letsecho.library.UserProfile;
+
 public class PersonAdapter extends ArrayAdapter<UserProfile> {
     public PersonAdapter(Context context, int resource, List<UserProfile> objects) {
         super(context, resource, objects);

@@ -37,6 +37,9 @@ import com.google.firebase.storage.UploadTask;
 import java.util.ArrayList;
 import java.util.List;
 
+import in.letsecho.library.ChatMessage;
+import in.letsecho.library.UserProfile;
+
 public class ChatActivity extends AppCompatActivity {
 
     private static final String TAG = "ChatActivity";

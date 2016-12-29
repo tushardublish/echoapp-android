@@ -28,6 +28,7 @@ dependencies {
     compile 'com.google.firebase:firebase-server-sdk:3.0.3'
     compile 'org.apache.httpcomponents:httpclient:4.5.2'
     compile 'com.google.appengine:appengine-api-1.0-sdk:1.9.48'
+    compile project(path: ':library')
 }
 
 appengine {
