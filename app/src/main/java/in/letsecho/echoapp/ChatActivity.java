@@ -146,7 +146,8 @@ public class ChatActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 // TODO: Send messages on click
-                ChatMessage chatMessage = new ChatMessage(mMessageEditText.getText().toString(), mUsername, null);
+                ChatMessage chatMessage = new ChatMessage(mMessageEditText.getText().toString(),
+                        mUsername, currentUser.getUid(), null);
                 currentChatDbRef.push().setValue(chatMessage);
 
                 // Clear input box
@@ -209,7 +210,8 @@ public class ChatActivity extends AppCompatActivity {
                             Uri downloadUrl = taskSnapshot.getDownloadUrl();
 
                             // Set the download URL to the message box, so that the user can send it to the database
-                            ChatMessage chatMessage = new ChatMessage(null, mUsername, downloadUrl.toString());
+                            ChatMessage chatMessage = new ChatMessage(null, mUsername,
+                                    currentUser.getUid(), downloadUrl.toString());
                             currentChatDbRef.push().setValue(chatMessage);
                         }
                     });

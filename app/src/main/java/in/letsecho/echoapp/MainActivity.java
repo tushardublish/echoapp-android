@@ -109,11 +109,6 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         };
-
-        //To insert Insatance id for exisitn users. Can be removed after 1st Feb 2017.
-        MyFirebaseInstanceIDService firebaseInstance = new MyFirebaseInstanceIDService();
-        String refreshedToken = FirebaseInstanceId.getInstance().getToken();
-        firebaseInstance.sendRegistrationToServer(refreshedToken);
     }
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -126,6 +121,11 @@ public class MainActivity extends AppCompatActivity {
                 UserProfile userProfile = new UserProfile(user.getUid(), user.getEmail(), user.getDisplayName(), user.getPhotoUrl().toString());
                 mUsersDbRef.child(user.getUid()).setValue(userProfile);
                 Toast.makeText(this, "Signed in!", Toast.LENGTH_SHORT).show();
+
+                //To insert Insatance id for existing users. Can be removed after 1st Feb 2017.
+                MyFirebaseInstanceIDService firebaseInstance = new MyFirebaseInstanceIDService();
+                String refreshedToken = FirebaseInstanceId.getInstance().getToken();
+                firebaseInstance.sendRegistrationToServer(refreshedToken);
             } else if (resultCode == RESULT_CANCELED) {
                 // Sign in was canceled by the user, finish the activity
                 Toast.makeText(this, "Sign in canceled", Toast.LENGTH_SHORT).show();

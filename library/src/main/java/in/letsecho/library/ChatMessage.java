@@ -19,15 +19,17 @@ public class ChatMessage {
 
     private String text;
     private String name;
+    private String senderUid;
     private String photoUrl;
     private Boolean notified;
 
     public ChatMessage() {
     }
 
-    public ChatMessage(String text, String name, String photoUrl) {
+    public ChatMessage(String text, String name, String senderUid, String photoUrl) {
         this.text = text;
         this.name = name;
+        this.senderUid = senderUid;
         this.photoUrl = photoUrl;
     }
 
@@ -46,6 +48,10 @@ public class ChatMessage {
     public void setName(String name) {
         this.name = name;
     }
+
+    public String getSenderUid() {return senderUid; }
+
+    public void setSenderUid(String senderUid) {this.senderUid = senderUid; }
 
     public String getPhotoUrl() {
         return photoUrl;
