@@ -5,6 +5,7 @@ import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.InputFilter;
 import android.text.TextWatcher;
@@ -57,6 +58,7 @@ public class ChatActivity extends AppCompatActivity {
     private ImageButton mPhotoPickerButton;
     private EditText mMessageEditText;
     private Button mSendButton;
+    private Toolbar toolbar;
 
     private FirebaseUser currentUser;
     private String mUsername, secondaryUid;
@@ -92,6 +94,7 @@ public class ChatActivity extends AppCompatActivity {
         mPhotoPickerButton = (ImageButton) findViewById(R.id.photoPickerButton);
         mMessageEditText = (EditText) findViewById(R.id.messageEditText);
         mSendButton = (Button) findViewById(R.id.sendButton);
+        toolbar = (Toolbar) findViewById(R.id.toolbar);
 
         // Initialize message ListView and its adapter
         List<ChatMessage> chatMessages = new ArrayList<>();
@@ -255,7 +258,7 @@ public class ChatActivity extends AppCompatActivity {
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot) {
                     UserProfile secondaryUser = dataSnapshot.getValue(UserProfile.class);
-                    setTitle(secondaryUser.getName());
+                    toolbar.setTitle(secondaryUser.getName());
                 };
                 @Override
                 public void onCancelled(DatabaseError databaseError) {};
