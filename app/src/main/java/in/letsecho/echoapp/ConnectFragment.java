@@ -40,7 +40,8 @@ public class ConnectFragment extends Fragment {
 
     private FirebaseAuth firebaseAuth;
     private FirebaseDatabase firebaseDatabase;
-    private DatabaseReference rootDbRef, userChatsDbRef;
+    private DatabaseReference rootDbRef;
+    private Query userChatsDbRef;
     private ArrayList<Query> chatDbRefs;
     private ChildEventListener userChatsEventListener;
     private ArrayList<ValueEventListener> chatListeners;
@@ -106,7 +107,7 @@ public class ConnectFragment extends Fragment {
     }
 
     private void attachDatabaseReadListener() {
-        userChatsDbRef = rootDbRef.child("chats/user_chats").child(currentUser.getUid());
+        userChatsDbRef = rootDbRef.child("chats/user_chats").child(currentUser.getUid()).orderByValue().limitToLast(1000);
         if (userChatsEventListener == null) {
             userChatsEventListener = new ChildEventListener() {
                 @Override
@@ -153,7 +154,10 @@ public class ConnectFragment extends Fragment {
                     View chatView = personListView.getChildAt(index);
                     TextView unreadText = (TextView) chatView.findViewById(R.id.unreadCount);
                     unreadText.setText(unreadMessageCount.toString());
-                    unreadText.setVisibility(View.VISIBLE);
+                    if(unreadMessageCount > 0)
+                        unreadText.setVisibility(View.VISIBLE);
+                    else
+                        unreadText.setVisibility(View.INVISIBLE);
                 }
             }
 

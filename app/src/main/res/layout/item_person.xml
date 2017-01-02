@@ -29,8 +29,8 @@
         android:layout_height="wrap_content"
         android:id="@+id/unreadCount"
         android:layout_weight="1"
-        android:textAlignment="textEnd"
-        android:textStyle="normal|bold"
-        android:visibility="invisible" />
+        android:visibility="invisible"
+        android:textAppearance="@android:style/TextAppearance.Material.Small"
+        android:textAlignment="textEnd" />
 
 </LinearLayout>
