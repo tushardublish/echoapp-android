@@ -34,20 +34,16 @@ import static android.app.Activity.RESULT_OK;
 public class ExploreFragment extends Fragment {
 
     public static final String ANONYMOUS = "anonymous";
-    public static final int RC_SIGN_IN = 1;
+
 
     private ListView mPersonListView;
     private PersonAdapter mPersonAdapter;
     private ProgressBar mProgressBar;
 
-    private String mUsername;
-
     private FirebaseDatabase mFirebaseDatabase;
     private DatabaseReference mUsersDbRef;
     private ChildEventListener mChildEventListener;
     private FirebaseAuth mFirebaseAuth;
-    private FirebaseAuth.AuthStateListener mAuthStateListener;
-    private FirebaseStorage mFirebaseStorage;
 
 
     @Override
@@ -76,92 +72,30 @@ public class ExploreFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-//        setContentView(R.layout.fragment_explore);
 
         // Initialize Firebase components
         mFirebaseDatabase = FirebaseDatabase.getInstance();
         mFirebaseAuth = FirebaseAuth.getInstance();
-        mFirebaseStorage = FirebaseStorage.getInstance();
-
         mUsersDbRef = mFirebaseDatabase.getReference().child("users");
-
 
         // Initialize person ListView and its adapter
         List<UserProfile> persons = new ArrayList<>();
         mPersonAdapter = new PersonAdapter(this.getContext(), R.layout.item_person, persons);
-
-
-
-        mAuthStateListener = new FirebaseAuth.AuthStateListener() {
-            @Override
-            public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
-                FirebaseUser user = firebaseAuth.getCurrentUser();
-                if (user != null) {
-                    // User is signed in
-                    onSignedInInitialize(user.getDisplayName());
-                } else {
-                    // User is signed out
-                    onSignedOutCleanup();
-                    startActivityForResult(
-                            AuthUI.getInstance()
-                                    .createSignInIntentBuilder()
-                                    .setIsSmartLockEnabled(false)
-                                    .setProviders(
-//                                            AuthUI.GOOGLE_PROVIDER,
-                                            AuthUI.FACEBOOK_PROVIDER)
-                                    .build(),
-                            RC_SIGN_IN);
-                }
-            }
-        };
     }
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == RC_SIGN_IN) {
-            if (resultCode == RESULT_OK) {
-                // Sign-in succeeded, set up the UI
-                // Saving user info in DB. To do: Should not happen on every sign in
-                FirebaseUser user = mFirebaseAuth.getCurrentUser();
-                UserProfile userProfile = new UserProfile(user.getUid(), user.getEmail(), user.getDisplayName(), user.getPhotoUrl().toString());
-                mUsersDbRef.child(user.getUid()).setValue(userProfile);
-//                Toast.makeText(getActivity(), "Signed in!", Toast.LENGTH_SHORT).show();
 
-                //To insert Insatance id for existing users. Can be removed after 1st Feb 2017.
-                MyFirebaseInstanceIDService firebaseInstance = new MyFirebaseInstanceIDService();
-                String refreshedToken = FirebaseInstanceId.getInstance().getToken();
-                firebaseInstance.sendRegistrationToServer(refreshedToken);
-            } else if (resultCode == RESULT_CANCELED) {
-                // Sign in was canceled by the user, finish the activity
-//                Toast.makeText(getActivity(), "Sign in canceled", Toast.LENGTH_SHORT).show();
-//                finish();
-            }
-        }
-    }
 
     @Override
     public void onResume() {
         super.onResume();
-        mFirebaseAuth.addAuthStateListener(mAuthStateListener);
+        if(mFirebaseAuth.getCurrentUser() != null) {
+            attachDatabaseReadListener();
+        }
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        if (mAuthStateListener != null) {
-            mFirebaseAuth.removeAuthStateListener(mAuthStateListener);
-        }
         mPersonAdapter.clear();
-        detachDatabaseReadListener();
-    }
-
-    private void onSignedInInitialize(String username) {
-        mUsername = username;
-        attachDatabaseReadListener();
-    }
-
-    private void onSignedOutCleanup() {
-        mUsername = ANONYMOUS;
         detachDatabaseReadListener();
     }
 
