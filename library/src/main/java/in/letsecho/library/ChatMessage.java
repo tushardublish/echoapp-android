@@ -15,6 +15,8 @@
  */
 package in.letsecho.library;
 
+import java.util.HashMap;
+
 public class ChatMessage {
 
     private String text;
@@ -22,15 +24,18 @@ public class ChatMessage {
     private String senderUid;
     private String photoUrl;
     private Boolean notified;
+    private HashMap<String,Boolean> seen;
 
     public ChatMessage() {
+        this.seen = new HashMap();
     }
 
-    public ChatMessage(String text, String name, String senderUid, String photoUrl) {
+    public ChatMessage(String text, String name, String senderUid, String photoUrl, HashMap<String, Boolean> seen) {
         this.text = text;
         this.name = name;
         this.senderUid = senderUid;
         this.photoUrl = photoUrl;
+        this.seen = seen;
     }
 
     public String getText() {
@@ -64,4 +69,20 @@ public class ChatMessage {
     public Boolean getNotified() { return notified; }
 
     public void setNotified(Boolean notified) { this.notified = notified; }
+
+    public HashMap<String,Boolean> getSeen() { return seen; }
+
+    public void setSeen(HashMap<String, Boolean> seen) { this.seen = seen; }
+
+    public boolean getSeenForUser(String userId) {
+        if(seen.containsKey(userId)) {
+            return seen.get(userId);
+        } else {
+            return Boolean.FALSE;
+        }
+    }
+
+    public void setSeenForUser(String userId) {
+        seen.put(userId, Boolean.TRUE);
+    }
 }

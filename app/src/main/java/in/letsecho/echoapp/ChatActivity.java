@@ -150,7 +150,7 @@ public class ChatActivity extends AppCompatActivity {
             public void onClick(View view) {
                 // TODO: Send messages on click
                 ChatMessage chatMessage = new ChatMessage(mMessageEditText.getText().toString(),
-                        mUsername, currentUser.getUid(), null);
+                        mUsername, currentUser.getUid(), null, new HashMap());
                 currentChatDbRef.push().setValue(chatMessage);
 
                 // Clear input box
@@ -214,7 +214,7 @@ public class ChatActivity extends AppCompatActivity {
 
                             // Set the download URL to the message box, so that the user can send it to the database
                             ChatMessage chatMessage = new ChatMessage(null, mUsername,
-                                    currentUser.getUid(), downloadUrl.toString());
+                                    currentUser.getUid(), downloadUrl.toString(), new HashMap());
                             currentChatDbRef.push().setValue(chatMessage);
                         }
                     });
@@ -304,6 +304,13 @@ public class ChatActivity extends AppCompatActivity {
                 public void onChildAdded(DataSnapshot dataSnapshot, String s) {
                     ChatMessage chatMessage = dataSnapshot.getValue(ChatMessage.class);
                     mMessageAdapter.add(chatMessage);
+                    //Mark message as seen
+                    String userId = currentUser.getUid();
+                    Boolean seen_status = chatMessage.getSeenForUser(userId);
+                    if(chatMessage.getSenderUid() != userId && seen_status == Boolean.FALSE){
+                        chatMessage.setSeenForUser(userId);
+                        currentChatDbRef.child(dataSnapshot.getKey()).setValue(chatMessage);
+                    }
                 }
 
                 public void onChildChanged(DataSnapshot dataSnapshot, String s) {}
@@ -323,6 +330,11 @@ public class ChatActivity extends AppCompatActivity {
         if (secondaryUserEventListener != null) {
             mSecondaryUserDbRef.removeEventListener(secondaryUserEventListener);
             secondaryUserEventListener = null;
+        }
+
+        if(currentChatDbRef != null) {
+            currentChatDbRef.removeEventListener(currentUserChatsEventListener);
+            currentUserChatsEventListener = null;
         }
     }
 

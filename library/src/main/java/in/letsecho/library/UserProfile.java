@@ -15,6 +15,8 @@
  */
 package in.letsecho.library;
 
+import java.util.List;
+
 public class UserProfile {
 
     private String uid;
@@ -62,4 +64,14 @@ public class UserProfile {
     public String getInstanceId() { return instanceId; }
 
     public void setInstanceId(String instanceId) { this. instanceId = instanceId; }
+
+    public static int findProfileOnUid(List<UserProfile> profiles, String id) {
+        for(int i = 0; i < profiles.size(); i++) {
+            UserProfile obj = profiles.get(i);
+            if(obj.getUID().equals(id)) {
+                return i;
+            }
+        }
+        return -1;
+    }
 }
