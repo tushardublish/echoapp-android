@@ -19,6 +19,9 @@ public class PagerAdapter extends FragmentPagerAdapter {
             case 0:
                 ExploreFragment tab1 = new ExploreFragment();
                 return tab1;
+            case 1:
+                ConnectFragment tab2 = new ConnectFragment();
+                return tab2;
             default:
                 return null;
         }

@@ -10,6 +10,7 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 import com.firebase.ui.auth.AuthUI;
 import com.google.firebase.auth.FirebaseAuth;
@@ -46,6 +47,7 @@ public class MainActivity extends AppCompatActivity {
 
         TabLayout tabLayout = (TabLayout) findViewById(R.id.tab_layout);
         tabLayout.addTab(tabLayout.newTab().setText("Explore"));
+        tabLayout.addTab(tabLayout.newTab().setText("Connect"));
         tabLayout.setTabGravity(TabLayout.GRAVITY_FILL);
 
         final ViewPager viewPager = (ViewPager) findViewById(R.id.pager);
@@ -101,7 +103,7 @@ public class MainActivity extends AppCompatActivity {
                 FirebaseUser user = mFirebaseAuth.getCurrentUser();
                 UserProfile userProfile = new UserProfile(user.getUid(), user.getEmail(), user.getDisplayName(), user.getPhotoUrl().toString());
                 mUsersDbRef.child(user.getUid()).setValue(userProfile);
-//                Toast.makeText(getActivity(), "Signed in!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Signed in!", Toast.LENGTH_SHORT).show();
 
                 //To insert Insatance id for existing users. Can be removed after 1st Feb 2017.
                 MyFirebaseInstanceIDService firebaseInstance = new MyFirebaseInstanceIDService();
@@ -109,8 +111,8 @@ public class MainActivity extends AppCompatActivity {
                 firebaseInstance.sendRegistrationToServer(refreshedToken);
             } else if (resultCode == RESULT_CANCELED) {
                 // Sign in was canceled by the user, finish the activity
-//                Toast.makeText(getActivity(), "Sign in canceled", Toast.LENGTH_SHORT).show();
-//                finish();
+                Toast.makeText(this, "Sign in canceled", Toast.LENGTH_SHORT).show();
+                finish();
             }
         }
     }

@@ -33,9 +33,6 @@ import static android.app.Activity.RESULT_OK;
 
 public class ExploreFragment extends Fragment {
 
-    public static final String ANONYMOUS = "anonymous";
-
-
     private ListView mPersonListView;
     private PersonAdapter mPersonAdapter;
     private ProgressBar mProgressBar;
@@ -44,7 +41,6 @@ public class ExploreFragment extends Fragment {
     private DatabaseReference mUsersDbRef;
     private ChildEventListener mChildEventListener;
     private FirebaseAuth mFirebaseAuth;
-
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -82,7 +78,6 @@ public class ExploreFragment extends Fragment {
         List<UserProfile> persons = new ArrayList<>();
         mPersonAdapter = new PersonAdapter(this.getContext(), R.layout.item_person, persons);
     }
-
 
     @Override
     public void onResume() {
