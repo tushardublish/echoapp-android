@@ -152,12 +152,15 @@ public class ConnectFragment extends Fragment {
                 int index = UserProfile.findProfileOnUid(persons, secondaryUserId);
                 if(index >= 0) {
                     View chatView = personListView.getChildAt(index);
-                    TextView unreadText = (TextView) chatView.findViewById(R.id.unreadCount);
-                    unreadText.setText(unreadMessageCount.toString());
-                    if(unreadMessageCount > 0)
-                        unreadText.setVisibility(View.VISIBLE);
-                    else
-                        unreadText.setVisibility(View.INVISIBLE);
+                    //Sometimes the chats do not get populated before this
+                    if(chatView != null) {
+                        TextView unreadText = (TextView) chatView.findViewById(R.id.unreadCount);
+                        unreadText.setText(unreadMessageCount.toString());
+                        if (unreadMessageCount > 0)
+                            unreadText.setVisibility(View.VISIBLE);
+                        else
+                            unreadText.setVisibility(View.INVISIBLE);
+                    }
                 }
             }
 

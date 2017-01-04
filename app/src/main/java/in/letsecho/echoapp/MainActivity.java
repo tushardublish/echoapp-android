@@ -12,6 +12,13 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.widget.Toast;
 
+import com.firebase.jobdispatcher.Constraint;
+import com.firebase.jobdispatcher.FirebaseJobDispatcher;
+import com.firebase.jobdispatcher.GooglePlayDriver;
+import com.firebase.jobdispatcher.Job;
+import com.firebase.jobdispatcher.Lifetime;
+import com.firebase.jobdispatcher.RetryStrategy;
+import com.firebase.jobdispatcher.Trigger;
 import com.firebase.ui.auth.AuthUI;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -21,6 +28,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.storage.FirebaseStorage;
 
+import in.letsecho.echoapp.service.LocationSyncService;
 import in.letsecho.library.UserProfile;
 
 public class MainActivity extends AppCompatActivity {
@@ -91,6 +99,8 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         };
+
+        InitiateLocationSyncJob();
     }
 
     @Override
@@ -148,5 +158,29 @@ public class MainActivity extends AppCompatActivity {
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+
+    private void InitiateLocationSyncJob(){
+        // Create a new dispatcher using the Google Play driver.
+        FirebaseJobDispatcher dispatcher = new FirebaseJobDispatcher(new GooglePlayDriver(this));
+        dispatcher.cancel("location-update-job");
+        Job myJob = dispatcher.newJobBuilder()
+                // the JobService that will be called
+                .setService(LocationSyncService.class)
+                // uniquely identifies the job
+                .setTag("location-update-job")
+                // one-off job
+                .setRecurring(true)
+                // persist job forever
+                .setLifetime(Lifetime.FOREVER)
+                // start between 0 and 5*60 seconds from now
+                .setTrigger(Trigger.executionWindow(0, 5*60))
+                // don't overwrite an existing job with the same tag
+                .setReplaceCurrent(false)
+                // retry with exponential backoff
+                .setRetryStrategy(RetryStrategy.DEFAULT_EXPONENTIAL)
+                .build();
+
+        dispatcher.mustSchedule(myJob);
     }
 }
