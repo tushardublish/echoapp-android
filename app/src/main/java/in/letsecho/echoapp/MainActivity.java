@@ -179,7 +179,14 @@ public class MainActivity extends AppCompatActivity {
             dispatcher.cancel("location-update-job");
             Bundle userBundle = new Bundle();
             //userBundle.putString("userId", mCurrentUser.getUid());
-            Job myJob = dispatcher.newJobBuilder()
+
+            Job instantJob = dispatcher.newJobBuilder()
+                    .setService(LocationSyncService.class)
+                    .setTag("location-update-job-instant")
+                    .build();
+            dispatcher.mustSchedule(instantJob);
+
+            Job recurringJob = dispatcher.newJobBuilder()
                     // the JobService that will be called
                     .setService(LocationSyncService.class)
                     // uniquely identifies the job
@@ -196,8 +203,7 @@ public class MainActivity extends AppCompatActivity {
                     .setRetryStrategy(RetryStrategy.DEFAULT_EXPONENTIAL)
                     .setExtras(userBundle)
                     .build();
-
-            dispatcher.mustSchedule(myJob);
+            dispatcher.mustSchedule(recurringJob);
         }
     }
 

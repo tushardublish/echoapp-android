@@ -1,5 +1,6 @@
 package in.letsecho.echoapp.service;
 
+import android.Manifest;
 import android.app.Service;
 import android.content.pm.PackageManager;
 import android.location.Location;
@@ -24,7 +25,7 @@ import java.util.Date;
 import in.letsecho.echoapp.R;
 
 public class LocationSyncService extends JobService implements
-        GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
+        GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener{
     private static String TAG = "LocationSyncService";
     public static final long UPDATE_INTERVAL_IN_MILLISECONDS = 5*1000;
     public static final long FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS = UPDATE_INTERVAL_IN_MILLISECONDS / 2;
@@ -42,10 +43,7 @@ public class LocationSyncService extends JobService implements
 //        String userId = userBundle.get("userId").toString();
 
         buildGoogleApiClient();
-        createLocationRequest();
-        if (mGoogleApiClient.isConnected()) {
-            startLocationUpdates();
-        }
+        mGoogleApiClient.connect();
 
         Log.i(TAG, "Job is running");
         return false; // Answers the question: "Is there still work going on?"
@@ -53,49 +51,8 @@ public class LocationSyncService extends JobService implements
 
     @Override
     public boolean onStopJob(JobParameters job) {
-        stopLocationUpdates();
+        mGoogleApiClient.disconnect();
         return false; // Answers the question: "Should this job be retried?"
-    }
-
-    protected void createLocationRequest() {
-        mGoogleApiClient.connect();
-        mLocationRequest = new LocationRequest();
-        mLocationRequest.setInterval(UPDATE_INTERVAL_IN_MILLISECONDS);  //In Milliseconds
-//        mLocationRequest.setFastestInterval(FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS);
-        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-    }
-
-    /**
-     * Requests location updates from the FusedLocationApi.
-     */
-    protected void startLocationUpdates() {
-        if (!mRequestingLocationUpdates) {
-            mRequestingLocationUpdates = true;
-            int locationPermission = ContextCompat.checkSelfPermission( this,
-                    android.Manifest.permission.ACCESS_FINE_LOCATION );
-            if (locationPermission == PackageManager.PERMISSION_GRANTED) {
-                LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
-                Log.i(TAG, " startLocationUpdates===");
-            }
-        }
-    }
-
-    /**
-     * Removes location updates from the FusedLocationApi.
-     */
-    protected void stopLocationUpdates() {
-        if (mRequestingLocationUpdates) {
-            mRequestingLocationUpdates = false;
-            Log.d(TAG, "stopLocationUpdates();==");
-            LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
-        }
-    }
-
-    @Override
-    public void onLocationChanged(Location location) {
-        mCurrentLocation = location;
-        mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
-        Log.d(TAG, "Latitude:==" + mCurrentLocation.getLatitude() + "\n Longitude:==" + mCurrentLocation.getLongitude());
     }
 
     protected synchronized void buildGoogleApiClient() {
@@ -109,7 +66,14 @@ public class LocationSyncService extends JobService implements
 
     @Override
     public void onConnected(Bundle bundle) {
-        startLocationUpdates();
+        int locationPermission = ContextCompat.checkSelfPermission( this, Manifest.permission.ACCESS_FINE_LOCATION);
+        if ( locationPermission == PackageManager.PERMISSION_GRANTED ) {
+            mCurrentLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+            if (mCurrentLocation != null) {
+                Log.d(TAG, "Latitude:==" + mCurrentLocation.getLatitude() + "\n Longitude:==" + mCurrentLocation.getLongitude());
+            }
+        }
+        Log.i(TAG, "Connection connected==");
     }
 
     @Override
