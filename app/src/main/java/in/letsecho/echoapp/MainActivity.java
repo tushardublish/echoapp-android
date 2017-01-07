@@ -183,6 +183,7 @@ public class MainActivity extends AppCompatActivity {
             Job instantJob = dispatcher.newJobBuilder()
                     .setService(LocationSyncService.class)
                     .setTag("location-update-job-instant")
+                    .setExtras(userBundle)
                     .build();
             dispatcher.mustSchedule(instantJob);
 

@@ -1,7 +1,6 @@
 package in.letsecho.echoapp;
 
 import android.content.Intent;
-import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -10,9 +9,11 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.ProgressBar;
-import android.widget.Toast;
 
-import com.firebase.ui.auth.AuthUI;
+import com.firebase.geofire.GeoFire;
+import com.firebase.geofire.GeoLocation;
+import com.firebase.geofire.GeoQuery;
+import com.firebase.geofire.GeoQueryEventListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.ChildEventListener;
@@ -20,27 +21,28 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.iid.FirebaseInstanceId;
-import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import in.letsecho.library.UserProfile;
 
-import static android.app.Activity.RESULT_CANCELED;
-import static android.app.Activity.RESULT_OK;
-
 public class ExploreFragment extends Fragment {
-
+    private static String TAG = "ExploreFragment";
     private ListView mPersonListView;
-    private PersonAdapter mPersonAdapter;
+        private PersonAdapter mPersonAdapter;
     private ProgressBar mProgressBar;
 
     private FirebaseDatabase mFirebaseDatabase;
-    private DatabaseReference mUsersDbRef;
-    private ChildEventListener mChildEventListener;
+    private DatabaseReference mRootDbRef, mUsersDbRef, mLocationsDbRef;
+    private ChildEventListener mUserProfileEventListener;
+    private ValueEventListener mCurrentLocationEventListener;
+    private GeoQueryEventListener mNearbyPeopleEventListener;
     private FirebaseAuth mFirebaseAuth;
+    private FirebaseUser mCurrentUser;
+    private GeoFire mNearbyPeopleGeoRef;
+    private GeoQuery mNearbyPeopleGeoQuery;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -72,7 +74,10 @@ public class ExploreFragment extends Fragment {
         // Initialize Firebase components
         mFirebaseDatabase = FirebaseDatabase.getInstance();
         mFirebaseAuth = FirebaseAuth.getInstance();
-        mUsersDbRef = mFirebaseDatabase.getReference().child("users");
+        mRootDbRef = mFirebaseDatabase.getReference();
+        mUsersDbRef = mFirebaseDatabase.getReference("users");
+        mLocationsDbRef = mFirebaseDatabase.getReference("locations/current");
+        mNearbyPeopleGeoRef = new GeoFire(mLocationsDbRef);
 
         // Initialize person ListView and its adapter
         List<UserProfile> persons = new ArrayList<>();
@@ -82,7 +87,8 @@ public class ExploreFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        if(mFirebaseAuth.getCurrentUser() != null) {
+        mCurrentUser = mFirebaseAuth.getCurrentUser();
+        if(mCurrentUser != null) {
             attachDatabaseReadListener();
         }
     }
@@ -95,27 +101,63 @@ public class ExploreFragment extends Fragment {
     }
 
     private void attachDatabaseReadListener() {
-        if (mChildEventListener == null) {
-            mChildEventListener = new ChildEventListener() {
+        DatabaseReference userLocationDbRef = mLocationsDbRef.child(mCurrentUser.getUid()).child("l");
+        if (mCurrentLocationEventListener == null) {
+            mCurrentLocationEventListener = new ValueEventListener() {
                 @Override
-                public void onChildAdded(DataSnapshot dataSnapshot, String s) {
-                    UserProfile person = dataSnapshot.getValue(UserProfile.class);
-                    mPersonAdapter.add(person);
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    ArrayList locationObj = (ArrayList)dataSnapshot.getValue();
+                    GeoLocation currentLocation = new GeoLocation((double)locationObj.get(0),
+                                                                    (double)locationObj.get(1));
+                    getNearbyPeople(currentLocation);
                 }
-
-                public void onChildChanged(DataSnapshot dataSnapshot, String s) {}
-                public void onChildRemoved(DataSnapshot dataSnapshot) {}
-                public void onChildMoved(DataSnapshot dataSnapshot, String s) {}
+                @Override
                 public void onCancelled(DatabaseError databaseError) {}
             };
-            mUsersDbRef.addChildEventListener(mChildEventListener);
+            userLocationDbRef.addValueEventListener(mCurrentLocationEventListener);
         }
     }
 
+    private void getNearbyPeople(GeoLocation currentLocation) {
+        double radium_km = 0.1;
+        mNearbyPeopleGeoQuery = mNearbyPeopleGeoRef.queryAtLocation(currentLocation, radium_km);
+        if(mNearbyPeopleEventListener == null) {
+            mNearbyPeopleEventListener = new GeoQueryEventListener() {
+                @Override
+                public void onKeyEntered(String key, GeoLocation location) {
+                    populateUserList(key);
+                }
+                @Override
+                public void onKeyExited(String key) {}
+                @Override
+                public void onKeyMoved(String key, GeoLocation location) {}
+                @Override
+                public void onGeoQueryReady() {}
+                @Override
+                public void onGeoQueryError(DatabaseError error) {}
+            };
+            mNearbyPeopleGeoQuery.addGeoQueryEventListener(mNearbyPeopleEventListener);
+        }
+    }
+
+    private void populateUserList(String secondaryUserId) {
+        DatabaseReference userDbRef = mRootDbRef.child("users").child(secondaryUserId);
+        userDbRef.addListenerForSingleValueEvent((new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                UserProfile secondaryUser = dataSnapshot.getValue(UserProfile.class);
+                mPersonAdapter.add(secondaryUser);
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {}
+        }));
+    }
+
     private void detachDatabaseReadListener() {
-        if (mChildEventListener != null) {
-            mUsersDbRef.removeEventListener(mChildEventListener);
-            mChildEventListener = null;
+        if (mUserProfileEventListener != null) {
+            mUsersDbRef.removeEventListener(mUserProfileEventListener);
+            mUserProfileEventListener = null;
         }
     }
 }
