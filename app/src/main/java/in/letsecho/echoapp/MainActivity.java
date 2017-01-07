@@ -93,6 +93,7 @@ public class MainActivity extends AppCompatActivity {
                 mCurrentUser = firebaseAuth.getCurrentUser();
                 if (mCurrentUser != null) {
                     // User is signed in
+                    InitiateLocationSyncJob();
                 } else {
                     // User is signed out
                     startActivityForResult(
@@ -108,7 +109,6 @@ public class MainActivity extends AppCompatActivity {
             }
         };
         checkForPermissions();
-        InitiateLocationSyncJob();
     }
 
     @Override
@@ -173,12 +173,12 @@ public class MainActivity extends AppCompatActivity {
 
     private void InitiateLocationSyncJob(){
         int locationPermission = ContextCompat.checkSelfPermission( this, Manifest.permission.ACCESS_FINE_LOCATION);
-        if ( locationPermission == PackageManager.PERMISSION_GRANTED ) {
+        if (mCurrentUser != null && locationPermission == PackageManager.PERMISSION_GRANTED) {
             // Create a new dispatcher using the Google Play driver.
             FirebaseJobDispatcher dispatcher = new FirebaseJobDispatcher(new GooglePlayDriver(this));
             dispatcher.cancel("location-update-job");
             Bundle userBundle = new Bundle();
-            //userBundle.putString("userId", mCurrentUser.getUid());
+            userBundle.putString("userId", mCurrentUser.getUid());
 
             Job instantJob = dispatcher.newJobBuilder()
                     .setService(LocationSyncService.class)

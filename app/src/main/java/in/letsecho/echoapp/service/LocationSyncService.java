@@ -10,6 +10,8 @@ import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.firebase.geofire.GeoFire;
+import com.firebase.geofire.GeoLocation;
 import com.firebase.jobdispatcher.JobParameters;
 import com.firebase.jobdispatcher.JobService;
 import com.google.android.gms.common.ConnectionResult;
@@ -17,6 +19,8 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 import java.text.DateFormat;
 import java.util.ArrayList;
@@ -31,16 +35,18 @@ public class LocationSyncService extends JobService implements
     public static final long FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS = UPDATE_INTERVAL_IN_MILLISECONDS / 2;
     public static Boolean mRequestingLocationUpdates = false;
 
-    protected String mLastUpdateTime;
+    protected String mLastUpdateTime, userId;
     protected GoogleApiClient mGoogleApiClient;
     protected LocationRequest mLocationRequest;
     protected Location mCurrentLocation;
+    protected FirebaseDatabase mFirebaseDatabase;
 
     @Override
     public boolean onStartJob(JobParameters job) {
-        // Do some work here
+        mFirebaseDatabase = FirebaseDatabase.getInstance();
+
         Bundle userBundle = job.getExtras();
-//        String userId = userBundle.get("userId").toString();
+        userId = userBundle.get("userId").toString();
 
         buildGoogleApiClient();
         mGoogleApiClient.connect();
@@ -71,6 +77,10 @@ public class LocationSyncService extends JobService implements
             mCurrentLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
             if (mCurrentLocation != null) {
                 Log.d(TAG, "Latitude:==" + mCurrentLocation.getLatitude() + "\n Longitude:==" + mCurrentLocation.getLongitude());
+                DatabaseReference locationDbRef = mFirebaseDatabase.getReference("locations/current");
+                GeoFire geoFire = new GeoFire(locationDbRef);
+                geoFire.setLocation(userId, new GeoLocation(mCurrentLocation.getLatitude(),
+                                                                    mCurrentLocation.getLongitude()));
             }
         }
         Log.i(TAG, "Connection connected==");
