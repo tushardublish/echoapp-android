@@ -114,7 +114,7 @@ public class ConnectFragment extends Fragment {
                 public void onChildAdded(DataSnapshot dataSnapshot, String s) {
                     String secondaryUserId = dataSnapshot.getKey();
                     String chatId = dataSnapshot.getValue(String.class);
-                    populateUserList(secondaryUserId);
+                    addUserToList(secondaryUserId);
                     setChatListener(chatId, secondaryUserId);
                 }
 
@@ -127,7 +127,7 @@ public class ConnectFragment extends Fragment {
         }
     }
 
-    private void populateUserList(String secondaryUserId) {
+    private void addUserToList(String secondaryUserId) {
         DatabaseReference userDbRef = rootDbRef.child("users").child(secondaryUserId);
         userDbRef.addListenerForSingleValueEvent((new ValueEventListener() {
             @Override
@@ -141,7 +141,7 @@ public class ConnectFragment extends Fragment {
         }));
     }
 
-    //Adding Listeners to each chat
+    //Adding Listeners to each chat to get unread messages count
     private void setChatListener(String chatId, final String secondaryUserId) {
         Query chatDbRef = rootDbRef.child("chats/messages").child(chatId)
                 .orderByChild("seen/"+currentUser.getUid()).equalTo(null);

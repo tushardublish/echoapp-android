@@ -31,11 +31,12 @@ import in.letsecho.library.UserProfile;
 public class ExploreFragment extends Fragment {
     private static String TAG = "ExploreFragment";
     private ListView mPersonListView;
-        private PersonAdapter mPersonAdapter;
+    private PersonAdapter mPersonAdapter;
     private ProgressBar mProgressBar;
+    List<UserProfile> mPersons;
 
     private FirebaseDatabase mFirebaseDatabase;
-    private DatabaseReference mRootDbRef, mUsersDbRef, mLocationsDbRef;
+    private DatabaseReference mUsersDbRef, mLocationsDbRef, mCurrentLocationDbRef;
     private ChildEventListener mUserProfileEventListener;
     private ValueEventListener mCurrentLocationEventListener;
     private GeoQueryEventListener mNearbyPeopleEventListener;
@@ -43,6 +44,7 @@ public class ExploreFragment extends Fragment {
     private FirebaseUser mCurrentUser;
     private GeoFire mNearbyPeopleGeoRef;
     private GeoQuery mNearbyPeopleGeoQuery;
+    private GeoLocation mCurrentLocation;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -74,14 +76,13 @@ public class ExploreFragment extends Fragment {
         // Initialize Firebase components
         mFirebaseDatabase = FirebaseDatabase.getInstance();
         mFirebaseAuth = FirebaseAuth.getInstance();
-        mRootDbRef = mFirebaseDatabase.getReference();
         mUsersDbRef = mFirebaseDatabase.getReference("users");
         mLocationsDbRef = mFirebaseDatabase.getReference("locations/current");
         mNearbyPeopleGeoRef = new GeoFire(mLocationsDbRef);
 
         // Initialize person ListView and its adapter
-        List<UserProfile> persons = new ArrayList<>();
-        mPersonAdapter = new PersonAdapter(this.getContext(), R.layout.item_person, persons);
+        mPersons = new ArrayList<>();
+        mPersonAdapter = new PersonAdapter(this.getContext(), R.layout.item_person, mPersons);
     }
 
     @Override
@@ -101,7 +102,7 @@ public class ExploreFragment extends Fragment {
     }
 
     private void attachDatabaseReadListener() {
-        DatabaseReference userLocationDbRef = mLocationsDbRef.child(mCurrentUser.getUid()).child("l");
+        mCurrentLocationDbRef = mLocationsDbRef.child(mCurrentUser.getUid()).child("l");
         if (mCurrentLocationEventListener == null) {
             mCurrentLocationEventListener = new ValueEventListener() {
                 @Override
@@ -114,21 +115,29 @@ public class ExploreFragment extends Fragment {
                 @Override
                 public void onCancelled(DatabaseError databaseError) {}
             };
-            userLocationDbRef.addValueEventListener(mCurrentLocationEventListener);
+            mCurrentLocationDbRef.addValueEventListener(mCurrentLocationEventListener);
         }
     }
 
     private void getNearbyPeople(GeoLocation currentLocation) {
         double radium_km = 0.1;
-        mNearbyPeopleGeoQuery = mNearbyPeopleGeoRef.queryAtLocation(currentLocation, radium_km);
+        if(mCurrentLocation == null) {
+            mNearbyPeopleGeoQuery = mNearbyPeopleGeoRef.queryAtLocation(currentLocation, radium_km);
+        } else {
+            mNearbyPeopleGeoQuery.setCenter(currentLocation);
+            mCurrentLocation = currentLocation;
+        }
         if(mNearbyPeopleEventListener == null) {
             mNearbyPeopleEventListener = new GeoQueryEventListener() {
                 @Override
                 public void onKeyEntered(String key, GeoLocation location) {
-                    populateUserList(key);
+                    //Tudu: Should add new user at position based on the distance
+                    addUserToList(key);
                 }
                 @Override
-                public void onKeyExited(String key) {}
+                public void onKeyExited(String key) {
+                    removeUserFromList(key);
+                }
                 @Override
                 public void onKeyMoved(String key, GeoLocation location) {}
                 @Override
@@ -140,24 +149,39 @@ public class ExploreFragment extends Fragment {
         }
     }
 
-    private void populateUserList(String secondaryUserId) {
-        DatabaseReference userDbRef = mRootDbRef.child("users").child(secondaryUserId);
+    private void addUserToList(String secondaryUserId) {
+        DatabaseReference userDbRef = mUsersDbRef.child(secondaryUserId);
         userDbRef.addListenerForSingleValueEvent((new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 UserProfile secondaryUser = dataSnapshot.getValue(UserProfile.class);
                 mPersonAdapter.add(secondaryUser);
             }
-
             @Override
             public void onCancelled(DatabaseError databaseError) {}
         }));
+    }
+
+    private void removeUserFromList(String secondaryUserId) {
+        int index = UserProfile.findProfileOnUid(mPersons, secondaryUserId);
+        UserProfile removedPerson = mPersons.get(index);
+        mPersonAdapter.remove(removedPerson);
     }
 
     private void detachDatabaseReadListener() {
         if (mUserProfileEventListener != null) {
             mUsersDbRef.removeEventListener(mUserProfileEventListener);
             mUserProfileEventListener = null;
+        }
+
+        if(mCurrentLocationEventListener != null) {
+            mCurrentLocationDbRef.removeEventListener(mCurrentLocationEventListener);
+            mCurrentLocationEventListener = null;
+        }
+
+        if(mNearbyPeopleEventListener != null) {
+            mNearbyPeopleGeoQuery.removeGeoQueryEventListener(mNearbyPeopleEventListener);
+            mNearbyPeopleEventListener = null;
         }
     }
 }
