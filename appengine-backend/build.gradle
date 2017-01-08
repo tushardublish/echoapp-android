@@ -29,6 +29,7 @@ dependencies {
     compile 'org.apache.httpcomponents:httpclient:4.5.2'
     compile 'com.google.appengine:appengine-api-1.0-sdk:1.9.48'
     compile project(path: ':library')
+    compile 'com.google.appengine:appengine-endpoints:1.9.48'
 }
 
 appengine {
