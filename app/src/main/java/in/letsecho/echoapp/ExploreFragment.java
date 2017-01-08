@@ -108,9 +108,11 @@ public class ExploreFragment extends Fragment {
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot) {
                     ArrayList locationObj = (ArrayList)dataSnapshot.getValue();
-                    GeoLocation currentLocation = new GeoLocation((double)locationObj.get(0),
-                                                                    (double)locationObj.get(1));
-                    getNearbyPeople(currentLocation);
+                    if(locationObj != null) {
+                        GeoLocation currentLocation = new GeoLocation((double) locationObj.get(0),
+                                (double) locationObj.get(1));
+                        getNearbyPeople(currentLocation);
+                    }
                 }
                 @Override
                 public void onCancelled(DatabaseError databaseError) {}
