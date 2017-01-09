@@ -30,6 +30,7 @@ dependencies {
     compile 'com.google.appengine:appengine-api-1.0-sdk:1.9.48'
     compile project(path: ':library')
     compile 'com.google.appengine:appengine-endpoints:1.9.48'
+    compile 'com.firebase:geofire-java:2.1.1'
 }
 
 appengine {

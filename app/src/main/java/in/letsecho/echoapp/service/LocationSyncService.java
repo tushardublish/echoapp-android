@@ -12,6 +12,8 @@ import android.widget.Toast;
 
 import com.firebase.geofire.GeoFire;
 import com.firebase.geofire.GeoLocation;
+import com.firebase.geofire.GeoQuery;
+import com.firebase.geofire.GeoQueryEventListener;
 import com.firebase.jobdispatcher.JobParameters;
 import com.firebase.jobdispatcher.JobService;
 import com.google.android.gms.common.ConnectionResult;
@@ -19,12 +21,15 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ServerValue;
 
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 
 import in.letsecho.echoapp.R;
 
@@ -40,10 +45,17 @@ public class LocationSyncService extends JobService implements
     protected LocationRequest mLocationRequest;
     protected Location mCurrentLocation;
     protected FirebaseDatabase mFirebaseDatabase;
+    protected DatabaseReference mCurrentLocationDbRef, mPastLocationDbRef;
+    protected GeoFire mNearbyPeopleGeoRef;
+    protected GeoQuery mNearbyPeopleGeoQuery;
+    protected GeoQueryEventListener mNearbyPeopleEventListener;
 
     @Override
     public boolean onStartJob(JobParameters job) {
         mFirebaseDatabase = FirebaseDatabase.getInstance();
+        mCurrentLocationDbRef = mFirebaseDatabase.getReference("locations/current");
+        mPastLocationDbRef = mFirebaseDatabase.getReference("locations/past");
+        mNearbyPeopleGeoRef = new GeoFire(mCurrentLocationDbRef);
 
         Bundle userBundle = job.getExtras();
         userId = userBundle.get("userId").toString();
@@ -58,6 +70,10 @@ public class LocationSyncService extends JobService implements
     @Override
     public boolean onStopJob(JobParameters job) {
         mGoogleApiClient.disconnect();
+        if(mNearbyPeopleEventListener != null) {
+            mNearbyPeopleGeoQuery.removeAllListeners();
+            mNearbyPeopleEventListener = null;
+        }
         return false; // Answers the question: "Should this job be retried?"
     }
 
@@ -79,11 +95,45 @@ public class LocationSyncService extends JobService implements
                 Log.d(TAG, "Latitude:==" + mCurrentLocation.getLatitude() + "\n Longitude:==" + mCurrentLocation.getLongitude());
                 DatabaseReference locationDbRef = mFirebaseDatabase.getReference("locations/current");
                 GeoFire geoFire = new GeoFire(locationDbRef);
-                geoFire.setLocation(userId, new GeoLocation(mCurrentLocation.getLatitude(),
-                                                                    mCurrentLocation.getLongitude()));
+                GeoLocation currentGeoLocation = new GeoLocation(mCurrentLocation.getLatitude(),
+                                                                    mCurrentLocation.getLongitude());
+                geoFire.setLocation(userId, currentGeoLocation);
+                saveNearbyPeople(currentGeoLocation);
             }
         }
         Log.i(TAG, "Connection connected==");
+    }
+
+    /*
+    This function should be moved to Backend. No specific need to do this in client.
+    Currently GeoFire was not compatible with Google Apps Engine.
+     */
+    private void saveNearbyPeople(GeoLocation currentLocation) {
+        double radium_km = 0.1;
+        final ArrayList<String> nearbyList = new ArrayList<>();
+        mNearbyPeopleGeoQuery = mNearbyPeopleGeoRef.queryAtLocation(currentLocation, radium_km);
+        mNearbyPeopleEventListener = new GeoQueryEventListener() {
+            @Override
+            public void onKeyEntered(String key, GeoLocation location) {
+                nearbyList.add(key);
+            }
+            @Override
+            public void onKeyExited(String key) {}
+            @Override
+            public void onKeyMoved(String key, GeoLocation location) {}
+            @Override
+            public void onGeoQueryReady() {
+                HashMap<String, Object> nearbyHash = new HashMap();
+                for(String secondaryUserId: nearbyList) {
+                    nearbyHash.put(secondaryUserId, ServerValue.TIMESTAMP);
+                }
+                //This will also update an existing user to the latest meeting time
+                mPastLocationDbRef.child(userId).setValue(nearbyHash);
+            }
+            @Override
+            public void onGeoQueryError(DatabaseError error) {}
+        };
+        mNearbyPeopleGeoQuery.addGeoQueryEventListener(mNearbyPeopleEventListener);
     }
 
     @Override
