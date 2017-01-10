@@ -19,11 +19,11 @@ import java.util.List;
 
 public class UserProfile {
 
-    private String uid;
-    private String email;
-    private String displayName;
-    private String photoUrl;
-    private String instanceId;
+    protected String uid;
+    protected String email;
+    protected String displayName;
+    protected String photoUrl;
+    protected String instanceId;
 
     public UserProfile() {
     }
@@ -64,14 +64,4 @@ public class UserProfile {
     public String getInstanceId() { return instanceId; }
 
     public void setInstanceId(String instanceId) { this. instanceId = instanceId; }
-
-    public static int findProfileOnUid(List<UserProfile> profiles, String id) {
-        for(int i = 0; i < profiles.size(); i++) {
-            UserProfile obj = profiles.get(i);
-            if(obj.getUID().equals(id)) {
-                return i;
-            }
-        }
-        return -1;
-    }
 }

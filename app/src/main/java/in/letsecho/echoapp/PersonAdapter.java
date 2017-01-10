@@ -13,10 +13,11 @@ import com.twitter.sdk.android.core.models.User;
 
 import java.util.List;
 
+import in.letsecho.library.UserDisplayModel;
 import in.letsecho.library.UserProfile;
 
-public class PersonAdapter extends ArrayAdapter<UserProfile> {
-    public PersonAdapter(Context context, int resource, List<UserProfile> objects) {
+public class PersonAdapter extends ArrayAdapter<UserDisplayModel> {
+    public PersonAdapter(Context context, int resource, List<UserDisplayModel> objects) {
         super(context, resource, objects);
     }
 
@@ -28,13 +29,18 @@ public class PersonAdapter extends ArrayAdapter<UserProfile> {
 
         ImageView photoImageView = (ImageView) convertView.findViewById(R.id.displayImageView);
         TextView nameTextView = (TextView) convertView.findViewById(R.id.nameTextView);
+        TextView rightAlignedInfo = (TextView) convertView.findViewById(R.id.rightNumberTextView);
 
-        UserProfile person = getItem(position);
+        UserDisplayModel person = getItem(position);
         nameTextView.setText(person.getName());
         if (person.getPhotoUrl() != null) {
             Glide.with(photoImageView.getContext())
                     .load(person.getPhotoUrl())
                     .into(photoImageView);
+        }
+        if(person.getRightAlignedInfo() != null) {
+            rightAlignedInfo.setText(person.getRightAlignedInfo());
+            rightAlignedInfo.setVisibility(View.VISIBLE);
         }
         return convertView;
     }

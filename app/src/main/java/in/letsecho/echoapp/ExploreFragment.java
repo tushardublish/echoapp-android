@@ -28,6 +28,7 @@ import com.google.firebase.database.ValueEventListener;
 import java.util.ArrayList;
 import java.util.List;
 
+import in.letsecho.library.UserDisplayModel;
 import in.letsecho.library.UserProfile;
 
 public class ExploreFragment extends Fragment {
@@ -36,7 +37,7 @@ public class ExploreFragment extends Fragment {
     private ListView mCurrentPeopleListView, mPastPeopleListView;
     private PersonAdapter mCurrentPeopleAdapter, mPastPeopleAdapter;
     private ProgressBar mProgressBar;
-    List<UserProfile> mCurrentPeople, mPastPeople;
+    List<UserDisplayModel> mCurrentPeople, mPastPeople;
 
     private FirebaseDatabase mFirebaseDatabase;
     private DatabaseReference mUsersDbRef, mLocationsDbRef, mCurrentLocationDbRef;
@@ -204,7 +205,7 @@ public class ExploreFragment extends Fragment {
         userDbRef.addListenerForSingleValueEvent((new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                UserProfile secondaryUser = dataSnapshot.getValue(UserProfile.class);
+                UserDisplayModel secondaryUser = dataSnapshot.getValue(UserDisplayModel.class);
                 mCurrentPeopleAdapter.add(secondaryUser);
             }
             @Override
@@ -217,19 +218,13 @@ public class ExploreFragment extends Fragment {
         userDbRef.addListenerForSingleValueEvent((new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                UserProfile secondaryUser = dataSnapshot.getValue(UserProfile.class);
-                mPastPeopleAdapter.add(secondaryUser);
+                UserDisplayModel secondaryUser = dataSnapshot.getValue(UserDisplayModel.class);
                 //Setting hour ago the person was near
-//                int index = mPastPeople.size() - 1;
-//                View personView = mPastPeopleListView.getChildAt(index);
-//                TextView durationText = (TextView) personView.findViewById(R.id.rightNumberTextView);
-//                if(durationText != null) {
-//                    if (hourDiff == 1)
-//                        durationText.setText(hourDiff.toString() + " hour");
-//                    else if (hourDiff > 1)
-//                        durationText.setText(hourDiff.toString() + " hours");
-//                    durationText.setVisibility(View.VISIBLE);
-//                }
+                if (hourDiff == 1)
+                    secondaryUser.setRightAlignedInfo(hourDiff.toString() + " hour");
+                else if (hourDiff > 1)
+                    secondaryUser.setRightAlignedInfo(hourDiff.toString() + " hours");
+                mPastPeopleAdapter.add(secondaryUser);
             }
             @Override
             public void onCancelled(DatabaseError databaseError) {}
@@ -237,8 +232,8 @@ public class ExploreFragment extends Fragment {
     }
 
     private void removeUserFromCurrentList(String secondaryUserId) {
-        int index = UserProfile.findProfileOnUid(mCurrentPeople, secondaryUserId);
-        UserProfile removedPerson = mCurrentPeople.get(index);
+        int index = UserDisplayModel.findProfileOnUid(mCurrentPeople, secondaryUserId);
+        UserDisplayModel removedPerson = mCurrentPeople.get(index);
         mCurrentPeopleAdapter.remove(removedPerson);
     }
 

@@ -24,6 +24,7 @@ import com.google.firebase.database.ValueEventListener;
 import java.util.ArrayList;
 import java.util.List;
 
+import in.letsecho.library.UserDisplayModel;
 import in.letsecho.library.UserProfile;
 
 /**
@@ -46,7 +47,7 @@ public class ConnectFragment extends Fragment {
     private ChildEventListener userChatsEventListener;
     private ArrayList<ValueEventListener> chatListeners;
 
-    List<UserProfile> persons;
+    List<UserDisplayModel> persons;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -132,7 +133,7 @@ public class ConnectFragment extends Fragment {
         userDbRef.addListenerForSingleValueEvent((new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                UserProfile secondaryUser = dataSnapshot.getValue(UserProfile.class);
+                UserDisplayModel secondaryUser = dataSnapshot.getValue(UserDisplayModel.class);
                 personAdapter.add(secondaryUser);
             }
 
@@ -149,18 +150,10 @@ public class ConnectFragment extends Fragment {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 Long unreadMessageCount = dataSnapshot.getChildrenCount();
-                int index = UserProfile.findProfileOnUid(persons, secondaryUserId);
-                if(index >= 0) {
-                    View chatView = personListView.getChildAt(index);
-                    //Sometimes the chats do not get populated before this
-                    if(chatView != null) {
-                        TextView unreadText = (TextView) chatView.findViewById(R.id.rightNumberTextView);
-                        unreadText.setText(unreadMessageCount.toString());
-                        if (unreadMessageCount > 0)
-                            unreadText.setVisibility(View.VISIBLE);
-                        else
-                            unreadText.setVisibility(View.INVISIBLE);
-                    }
+                int index = UserDisplayModel.findProfileOnUid(persons, secondaryUserId);
+                if(index >= 0 && unreadMessageCount > 0) {
+                    persons.get(index).setRightAlignedInfo(unreadMessageCount.toString());
+                    personAdapter.notifyDataSetChanged();
                 }
             }
 
