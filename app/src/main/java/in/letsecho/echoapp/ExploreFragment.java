@@ -9,6 +9,7 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 
 import com.firebase.geofire.GeoFire;
 import com.firebase.geofire.GeoLocation;
@@ -21,6 +22,7 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
@@ -30,15 +32,17 @@ import in.letsecho.library.UserProfile;
 
 public class ExploreFragment extends Fragment {
     private static String TAG = "ExploreFragment";
-    private ListView mPersonListView;
-    private PersonAdapter mPersonAdapter;
+    private static long HOURS_TO_MILLI_SECS = 60*60*1000;
+    private ListView mCurrentPeopleListView, mPastPeopleListView;
+    private PersonAdapter mCurrentPeopleAdapter, mPastPeopleAdapter;
     private ProgressBar mProgressBar;
-    List<UserProfile> mPersons;
+    List<UserProfile> mCurrentPeople, mPastPeople;
 
     private FirebaseDatabase mFirebaseDatabase;
     private DatabaseReference mUsersDbRef, mLocationsDbRef, mCurrentLocationDbRef;
+    private Query mPastLocationDbRef;
     private ChildEventListener mUserProfileEventListener;
-    private ValueEventListener mCurrentLocationEventListener;
+    private ValueEventListener mCurrentLocationEventListener, mPastPeopleEventListener;
     private GeoQueryEventListener mNearbyPeopleEventListener;
     private FirebaseAuth mFirebaseAuth;
     private FirebaseUser mCurrentUser;
@@ -51,12 +55,28 @@ public class ExploreFragment extends Fragment {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_explore, container, false);
         // Initialize references to views
-        mPersonListView = (ListView) view.findViewById(R.id.personListView);
-        mPersonListView.setAdapter(mPersonAdapter);
-        mPersonListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        mCurrentPeopleListView = (ListView) view.findViewById(R.id.currentPeopleListView);
+        View currentPeopleHeader = inflater.inflate(R.layout.header_current_people, null);
+        mCurrentPeopleListView.addHeaderView(currentPeopleHeader);
+        mCurrentPeopleListView.setAdapter(mCurrentPeopleAdapter);
+        mCurrentPeopleListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                UserProfile person = mPersonAdapter.getItem(position);
+                UserProfile person = mCurrentPeopleAdapter.getItem(position);
+                Intent intent = new Intent(getActivity().getApplicationContext(), ChatActivity.class)
+                        .putExtra(Intent.EXTRA_USER, person.getUID());
+                startActivity(intent);
+            }
+        });
+
+        mPastPeopleListView = (ListView) view.findViewById(R.id.pastPeopleListView);
+        View pastPeopleHeader = inflater.inflate(R.layout.header_past_people, null);
+        mPastPeopleListView.addHeaderView(pastPeopleHeader);
+        mPastPeopleListView.setAdapter(mPastPeopleAdapter);
+        mPastPeopleListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                UserProfile person = mPastPeopleAdapter.getItem(position);
                 Intent intent = new Intent(getActivity().getApplicationContext(), ChatActivity.class)
                         .putExtra(Intent.EXTRA_USER, person.getUID());
                 startActivity(intent);
@@ -81,8 +101,10 @@ public class ExploreFragment extends Fragment {
         mNearbyPeopleGeoRef = new GeoFire(mLocationsDbRef);
 
         // Initialize person ListView and its adapter
-        mPersons = new ArrayList<>();
-        mPersonAdapter = new PersonAdapter(this.getContext(), R.layout.item_person, mPersons);
+        mCurrentPeople = new ArrayList<>();
+        mCurrentPeopleAdapter = new PersonAdapter(this.getContext(), R.layout.item_person, mCurrentPeople);
+        mPastPeople = new ArrayList<>();
+        mPastPeopleAdapter = new PersonAdapter(this.getContext(), R.layout.item_person, mPastPeople);
     }
 
     @Override
@@ -97,7 +119,8 @@ public class ExploreFragment extends Fragment {
     @Override
     public void onPause() {
         super.onPause();
-        mPersonAdapter.clear();
+        mCurrentPeopleAdapter.clear();
+        mPastPeopleAdapter.clear();
         detachDatabaseReadListener();
     }
 
@@ -119,6 +142,8 @@ public class ExploreFragment extends Fragment {
             };
             mCurrentLocationDbRef.addValueEventListener(mCurrentLocationEventListener);
         }
+
+        getPastNearbyPeople();
     }
 
     private void getNearbyPeople(GeoLocation currentLocation) {
@@ -134,11 +159,11 @@ public class ExploreFragment extends Fragment {
                 @Override
                 public void onKeyEntered(String key, GeoLocation location) {
                     //Tudu: Should add new user at position based on the distance
-                    addUserToList(key);
+                    addUserToCurrentList(key);
                 }
                 @Override
                 public void onKeyExited(String key) {
-                    removeUserFromList(key);
+                    removeUserFromCurrentList(key);
                 }
                 @Override
                 public void onKeyMoved(String key, GeoLocation location) {}
@@ -151,23 +176,70 @@ public class ExploreFragment extends Fragment {
         }
     }
 
-    private void addUserToList(String secondaryUserId) {
+    private void getPastNearbyPeople() {
+        long one_day_milli_secs = 24*HOURS_TO_MILLI_SECS;
+        long start_time = System.currentTimeMillis() - one_day_milli_secs;
+        mPastLocationDbRef = mFirebaseDatabase.getReference("locations/past").child(mCurrentUser.getUid())
+                .orderByValue().startAt(start_time).limitToLast(100);
+        if(mPastPeopleEventListener == null) {
+            mPastPeopleEventListener = new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    for(DataSnapshot secondaryUser: dataSnapshot.getChildren()) {
+                        String secondaryUserId = secondaryUser.getKey();
+                        int hourDiff = (int)((System.currentTimeMillis() - secondaryUser.getValue(Long.class))
+                                /HOURS_TO_MILLI_SECS);
+                        addUserToPastList(secondaryUserId, hourDiff);
+                    }
+                }
+                @Override
+                public void onCancelled(DatabaseError databaseError) {}
+            };
+            mPastLocationDbRef.addListenerForSingleValueEvent(mPastPeopleEventListener);
+        }
+    }
+
+    private void addUserToCurrentList(String secondaryUserId) {
         DatabaseReference userDbRef = mUsersDbRef.child(secondaryUserId);
         userDbRef.addListenerForSingleValueEvent((new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 UserProfile secondaryUser = dataSnapshot.getValue(UserProfile.class);
-                mPersonAdapter.add(secondaryUser);
+                mCurrentPeopleAdapter.add(secondaryUser);
             }
             @Override
             public void onCancelled(DatabaseError databaseError) {}
         }));
     }
 
-    private void removeUserFromList(String secondaryUserId) {
-        int index = UserProfile.findProfileOnUid(mPersons, secondaryUserId);
-        UserProfile removedPerson = mPersons.get(index);
-        mPersonAdapter.remove(removedPerson);
+    private void addUserToPastList(String secondaryUserId, final Integer hourDiff) {
+        DatabaseReference userDbRef = mUsersDbRef.child(secondaryUserId);
+        userDbRef.addListenerForSingleValueEvent((new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                UserProfile secondaryUser = dataSnapshot.getValue(UserProfile.class);
+                mPastPeopleAdapter.add(secondaryUser);
+                //Setting hour ago the person was near
+//                int index = mPastPeople.size() - 1;
+//                View personView = mPastPeopleListView.getChildAt(index);
+//                TextView durationText = (TextView) personView.findViewById(R.id.rightNumberTextView);
+//                if(durationText != null) {
+//                    if (hourDiff == 1)
+//                        durationText.setText(hourDiff.toString() + " hour");
+//                    else if (hourDiff > 1)
+//                        durationText.setText(hourDiff.toString() + " hours");
+//                    durationText.setVisibility(View.VISIBLE);
+//                }
+            }
+            @Override
+            public void onCancelled(DatabaseError databaseError) {}
+        }));
+    }
+
+    private void removeUserFromCurrentList(String secondaryUserId) {
+        int index = UserProfile.findProfileOnUid(mCurrentPeople, secondaryUserId);
+        UserProfile removedPerson = mCurrentPeople.get(index);
+        mCurrentPeopleAdapter.remove(removedPerson);
     }
 
     private void detachDatabaseReadListener() {

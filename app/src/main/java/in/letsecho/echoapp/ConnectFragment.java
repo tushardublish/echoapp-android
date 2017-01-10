@@ -154,7 +154,7 @@ public class ConnectFragment extends Fragment {
                     View chatView = personListView.getChildAt(index);
                     //Sometimes the chats do not get populated before this
                     if(chatView != null) {
-                        TextView unreadText = (TextView) chatView.findViewById(R.id.unreadCount);
+                        TextView unreadText = (TextView) chatView.findViewById(R.id.rightNumberTextView);
                         unreadText.setText(unreadMessageCount.toString());
                         if (unreadMessageCount > 0)
                             unreadText.setVisibility(View.VISIBLE);
