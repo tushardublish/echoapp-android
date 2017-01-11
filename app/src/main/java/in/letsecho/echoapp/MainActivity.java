@@ -1,24 +1,22 @@
 package in.letsecho.echoapp;
 
-import android.*;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.Uri;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.widget.Toast;
 
-import com.firebase.jobdispatcher.Constraint;
 import com.firebase.jobdispatcher.FirebaseJobDispatcher;
 import com.firebase.jobdispatcher.GooglePlayDriver;
 import com.firebase.jobdispatcher.Job;
@@ -26,16 +24,14 @@ import com.firebase.jobdispatcher.Lifetime;
 import com.firebase.jobdispatcher.RetryStrategy;
 import com.firebase.jobdispatcher.Trigger;
 import com.firebase.ui.auth.AuthUI;
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.location.LocationServices;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.ChildEventListener;
+import com.google.firebase.auth.UserInfo;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.iid.FirebaseInstanceId;
-import com.google.firebase.storage.FirebaseStorage;
+
+import java.util.List;
 
 import in.letsecho.echoapp.service.LocationSyncService;
 import in.letsecho.library.UserProfile;
@@ -93,6 +89,7 @@ public class MainActivity extends AppCompatActivity {
                 mCurrentUser = firebaseAuth.getCurrentUser();
                 if (mCurrentUser != null) {
                     // User is signed in
+                    fetchFbData();
                     InitiateLocationSyncJob();
                 } else {
                     // User is signed out
@@ -151,6 +148,21 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void fetchFbData() {
+        List<? extends UserInfo>providerData = mCurrentUser.getProviderData();
+        for (UserInfo profile: providerData) {
+            // Id of the provider (ex: google.com)
+            String providerId = profile.getProviderId();
+
+            // UID specific to the provider
+            String uid = profile.getUid();
+
+            // Name, email address, and profile photo Url
+            String name = profile.getDisplayName();
+            String email = profile.getEmail();
+            Uri photoUrl = profile.getPhotoUrl();
+        };
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {

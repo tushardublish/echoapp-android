@@ -9,12 +9,10 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
-import com.twitter.sdk.android.core.models.User;
 
 import java.util.List;
 
 import in.letsecho.library.UserDisplayModel;
-import in.letsecho.library.UserProfile;
 
 public class PersonAdapter extends ArrayAdapter<UserDisplayModel> {
     public PersonAdapter(Context context, int resource, List<UserDisplayModel> objects) {
