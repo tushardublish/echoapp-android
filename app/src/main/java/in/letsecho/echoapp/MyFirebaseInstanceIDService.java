@@ -28,7 +28,7 @@ import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.FirebaseInstanceIdService;
 
-import in.letsecho.library.UserProfile;
+import in.letsecho.echoapp.library.UserProfile;
 
 
 public class MyFirebaseInstanceIDService extends FirebaseInstanceIdService {

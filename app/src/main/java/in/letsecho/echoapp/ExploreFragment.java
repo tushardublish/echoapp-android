@@ -27,8 +27,8 @@ import com.google.firebase.database.ValueEventListener;
 import java.util.ArrayList;
 import java.util.List;
 
-import in.letsecho.library.UserDisplayModel;
-import in.letsecho.library.UserProfile;
+import in.letsecho.echoapp.library.UserDisplayModel;
+import in.letsecho.echoapp.library.UserProfile;
 
 public class ExploreFragment extends Fragment {
     private static String TAG = "ExploreFragment";

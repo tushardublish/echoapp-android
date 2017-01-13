@@ -12,7 +12,7 @@ import com.bumptech.glide.Glide;
 
 import java.util.List;
 
-import in.letsecho.library.UserDisplayModel;
+import in.letsecho.echoapp.library.UserDisplayModel;
 
 public class PersonAdapter extends ArrayAdapter<UserDisplayModel> {
     public PersonAdapter(Context context, int resource, List<UserDisplayModel> objects) {

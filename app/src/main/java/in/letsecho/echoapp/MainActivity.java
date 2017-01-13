@@ -34,7 +34,7 @@ import com.google.firebase.iid.FirebaseInstanceId;
 import java.util.List;
 
 import in.letsecho.echoapp.service.LocationSyncService;
-import in.letsecho.library.UserProfile;
+import in.letsecho.echoapp.library.UserProfile;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -63,7 +63,7 @@ public class MainActivity extends AppCompatActivity {
 
         TabLayout tabLayout = (TabLayout) findViewById(R.id.tab_layout);
         tabLayout.addTab(tabLayout.newTab().setText("Explore"));
-        tabLayout.addTab(tabLayout.newTab().setText("Connect"));
+        tabLayout.addTab(tabLayout.newTab().setText("Connections"));
         tabLayout.setTabGravity(TabLayout.GRAVITY_FILL);
 
         final ViewPager viewPager = (ViewPager) findViewById(R.id.pager);
@@ -89,8 +89,7 @@ public class MainActivity extends AppCompatActivity {
                 mCurrentUser = firebaseAuth.getCurrentUser();
                 if (mCurrentUser != null) {
                     // User is signed in
-                    fetchFbData();
-                    InitiateLocationSyncJob();
+                    InitializeUser();
                 } else {
                     // User is signed out
                     startActivityForResult(
@@ -116,16 +115,11 @@ public class MainActivity extends AppCompatActivity {
                 // Sign-in succeeded, set up the UI
                 // Saving user info in DB. To do: Should not happen on every sign in
                 mCurrentUser = mFirebaseAuth.getCurrentUser();
-                UserProfile userProfile = new UserProfile(mCurrentUser.getUid(), mCurrentUser.getEmail(), mCurrentUser.getDisplayName(), mCurrentUser.getPhotoUrl().toString());
+                UserProfile userProfile = new UserProfile(mCurrentUser);
                 mUsersDbRef.child(mCurrentUser.getUid()).setValue(userProfile);
                 Toast.makeText(this, "Signed in!", Toast.LENGTH_SHORT).show();
 
-                //To insert Insatance id for existing users. Can be removed after 1st Feb 2017.
-                MyFirebaseInstanceIDService firebaseInstance = new MyFirebaseInstanceIDService();
-                String refreshedToken = FirebaseInstanceId.getInstance().getToken();
-                firebaseInstance.sendRegistrationToServer(refreshedToken);
-
-                InitiateLocationSyncJob();
+                InitializeUser();
             } else if (resultCode == RESULT_CANCELED) {
                 // Sign in was canceled by the user, finish the activity
                 Toast.makeText(this, "Sign in canceled", Toast.LENGTH_SHORT).show();
@@ -148,22 +142,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void fetchFbData() {
-        List<? extends UserInfo>providerData = mCurrentUser.getProviderData();
-        for (UserInfo profile: providerData) {
-            // Id of the provider (ex: google.com)
-            String providerId = profile.getProviderId();
-
-            // UID specific to the provider
-            String uid = profile.getUid();
-
-            // Name, email address, and profile photo Url
-            String name = profile.getDisplayName();
-            String email = profile.getEmail();
-            Uri photoUrl = profile.getPhotoUrl();
-        };
-    }
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
@@ -181,6 +159,15 @@ public class MainActivity extends AppCompatActivity {
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+
+    private void InitializeUser() {
+        InitiateLocationSyncJob();
+
+        //To update Insatance id for users. Can be removed after 1st Feb 2017.
+        MyFirebaseInstanceIDService firebaseInstance = new MyFirebaseInstanceIDService();
+        String refreshedToken = FirebaseInstanceId.getInstance().getToken();
+        firebaseInstance.sendRegistrationToServer(refreshedToken);
     }
 
     private void InitiateLocationSyncJob(){

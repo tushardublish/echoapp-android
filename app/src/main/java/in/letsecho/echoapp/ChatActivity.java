@@ -40,7 +40,7 @@ import java.util.List;
 import java.util.Map;
 
 import in.letsecho.library.ChatMessage;
-import in.letsecho.library.UserProfile;
+import in.letsecho.echoapp.library.UserProfile;
 
 public class ChatActivity extends AppCompatActivity {
 

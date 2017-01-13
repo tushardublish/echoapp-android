@@ -15,10 +15,10 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.internal.Log;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
@@ -33,15 +33,20 @@ import in.letsecho.library.ChatMessage;
 
 public class MyServlet extends HttpServlet {
 
-    private DatabaseReference rootDbRef;
-    private DatabaseReference currentChatDbRef;
-    private ChildEventListener messageEventListener;
+    private static String TAG = "MyServletNotifications";
+    private DatabaseReference rootDbRef, chatDbRef;
+    private ArrayList<DatabaseReference> messageDbRefList;
+    private ChildEventListener chatEventListener;
+    private ArrayList<ChildEventListener> messageEventListenerList;
+    private HashMap<String, List<String>> chatUsers;
+    private HashMap<String, String> userInstances;
 
     @Override
     public void init(ServletConfig config) {
+        messageDbRefList = new ArrayList<>();
+        messageEventListenerList = new ArrayList<>();
         String credential = config.getInitParameter("credential");
         String databaseUrl = config.getInitParameter("databaseUrl");
-
         FirebaseOptions options = new FirebaseOptions.Builder()
                 .setServiceAccount(config.getServletContext().getResourceAsStream(credential))
                 .setDatabaseUrl(databaseUrl)
@@ -49,53 +54,74 @@ public class MyServlet extends HttpServlet {
         FirebaseApp.initializeApp(options);
         FirebaseDatabase firebaseDb = FirebaseDatabase.getInstance();
         rootDbRef = firebaseDb.getReference();
+        chatUsers = getUsersFromChat();
+        userInstances = getUserInstances();
         sendMessageNotifications();
-//        messageNotifier = new MessageNotifier(rootDbRef);
-//        messageNotifier.start();
     }
 
     private void sendMessageNotifications() {
-        final String chatId = "-KZfU1gdjh5qmSn2WbWV";
-        currentChatDbRef = rootDbRef.child("chats").child("messages").child(chatId);
-        final List<String> userIds = getUsersFromChatId(chatId);
-        if (messageEventListener == null) {
-            messageEventListener = new ChildEventListener() {
+        chatDbRef = rootDbRef.child("chats").child("messages");
+        if(chatEventListener == null) {
+            chatEventListener = new ChildEventListener() {
                 @Override
                 public void onChildAdded(DataSnapshot dataSnapshot, String s) {
-                    ChatMessage chatMessage = dataSnapshot.getValue(ChatMessage.class);
-                    String messageKey = dataSnapshot.getKey();
-                    if(chatMessage.getNotified() != Boolean.TRUE) {
-                        //Send Notification
-                        String senderUid = chatMessage.getSenderUid();
-                        for(String userId: userIds) {
-                            if(userId != senderUid) {
-                                try {
-                                    sendNotificationToUser(userId, chatMessage);
-                                } catch (Exception e) {
-
-                                }
-                            }
-                        }
-
-                        //Update Status
-                        chatMessage.setNotified(Boolean.TRUE);
-                        currentChatDbRef.child(messageKey).setValue(chatMessage);
-                    }
+                    String chatId = dataSnapshot.getKey();
+                    DatabaseReference messageDbRef = chatDbRef.child(chatId);
+                    ChildEventListener messageEventListener = getMessageListener(chatId);
+                    messageDbRef.addChildEventListener(messageEventListener);
+                    messageDbRefList.add(messageDbRef);
+                    messageEventListenerList.add(messageEventListener);
                 }
-
+                @Override
                 public void onChildChanged(DataSnapshot dataSnapshot, String s) {}
+                @Override
                 public void onChildRemoved(DataSnapshot dataSnapshot) {}
+                @Override
                 public void onChildMoved(DataSnapshot dataSnapshot, String s) {}
+                @Override
                 public void onCancelled(DatabaseError databaseError) {}
             };
-            currentChatDbRef.addChildEventListener(messageEventListener);
+            chatDbRef.addChildEventListener(chatEventListener);
         }
+    }
+
+    private ChildEventListener getMessageListener(final String chatId) {
+        final List<String> userIds = chatUsers.get(chatId);
+        ChildEventListener messageEventListener = new ChildEventListener() {
+            @Override
+            public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+                String messageKey = dataSnapshot.getKey();
+                ChatMessage chatMessage = dataSnapshot.getValue(ChatMessage.class);
+                if(chatMessage.getNotified() != Boolean.TRUE) {
+                    //Send Notification
+                    String senderUid = chatMessage.getSenderUid();
+                    for(String userId: userIds) {
+                        if(!userId.equals(senderUid)) {
+                            try {
+                                sendNotificationToUser(userId, chatMessage);
+                            } catch (Exception e) {
+                                Log.w(TAG, "Error in Sending Notification. Error: " + e.toString());
+                            }
+                        }
+                    }
+                    //Update Status
+                    chatMessage.setNotified(Boolean.TRUE);
+                    chatDbRef.child(chatId).child(messageKey).setValue(chatMessage);
+                }
+            }
+            public void onChildChanged(DataSnapshot dataSnapshot, String s) {}
+            public void onChildRemoved(DataSnapshot dataSnapshot) {}
+            public void onChildMoved(DataSnapshot dataSnapshot, String s) {}
+            public void onCancelled(DatabaseError databaseError) {}
+        };
+        return messageEventListener;
     }
 
     private void sendNotificationToUser(String userId, ChatMessage message) throws Exception{
         String apiKey = "AAAAJudZXIQ:APA91bG2sneJVDhM-Mh17bVYkBTtolDxb0UtqZjLujcqQskDmSOSRDUR1a3b0ceVw08bMBXozZn9_PqFuJokvRFGkGbj_af1aC-ZcEqOkkL7FKcvBnYE3PF7cgd_Llvw-__TxLM32r46x9BaoNq8eADx-G-b8rvc3A";
-//        List<String> instanceId = getInstanceIdForUser(userId);
-        String instanceId = "e4p1gkzTJGg:APA91bFoaaewjkc4S9nXRzIn6Hbi5flINmNQuakIzMrW1WVhWyAiH5sA0S1ynW5uaXZ06k6K6oWglAaVITfyoabNZN8msc7yYdLfho6xmVzQjZ08Mf5bHgmhBEcqyr_ontRE1KmPinEI";
+        String instanceId = userInstances.get(userId);
+        if(instanceId == null)  //if instanceId has not been inserted then send it to tushar. Remove it later.
+            instanceId = userInstances.get("vBnYd7839IMcCw0H5XaELsnMVfD2");
         String url = "https://fcm.googleapis.com/fcm/send";
 
         URL urlObj = new URL(url);
@@ -112,7 +138,7 @@ public class MyServlet extends HttpServlet {
         obj.addProperty("to", instanceId);
         obj.addProperty("priority", "high");
         JsonObject notification = new JsonObject();
-        notification.addProperty("title", "New message from " + message.getName());
+        notification.addProperty("title", message.getName());
         notification.addProperty("body", message.getText());
         obj.add("notification",notification);
         String postJsonData = obj.toString();
@@ -128,38 +154,46 @@ public class MyServlet extends HttpServlet {
         System.out.println("\nSending 'POST' request to URL : " + url);
         System.out.println("Post Data : " + postJsonData);
         System.out.println("Response Code : " + responseCode);
-
     }
 
-    private List<String> getUsersFromChatId(String chatId) {
-        final List<String> userList = new ArrayList();
-        DatabaseReference chatInfoDbRef = rootDbRef.child("chats/info").child(chatId).child("users");
+    private HashMap getUsersFromChat() {
+        final HashMap<String, List<String>> chatList = new HashMap<>();
+        DatabaseReference chatInfoDbRef = rootDbRef.child("chats/info");
         chatInfoDbRef.addListenerForSingleValueEvent((new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                for(DataSnapshot user: dataSnapshot.getChildren()) {
-                    userList.add(user.getKey());
+                for(DataSnapshot chat: dataSnapshot.getChildren()) {
+                    String chatId = chat.getKey();
+                    List<String> userList = new ArrayList();
+                    for(DataSnapshot user: chat.child("users").getChildren()) {
+                        String userId = user.getKey();
+                        userList.add(userId);
+                    }
+                    chatList.put(chatId, userList);
                 }
             }
             @Override
             public void onCancelled(DatabaseError databaseError) {}
         }));
-        return userList;
+        return chatList;
     }
 
-    private List<String> getInstanceIdForUser(String userId) {
-        final List<String> instanceId = new ArrayList<>(); //Doing this because inner class is not able to modify outside variable
-        DatabaseReference userInstanceRef = rootDbRef.child("users").child(userId).child("instanceId");
-        userInstanceRef.addListenerForSingleValueEvent((new ValueEventListener() {
+    private HashMap getUserInstances() {
+        final HashMap<String, String> instanceIds = new HashMap<>();
+        DatabaseReference userRef = rootDbRef.child("users");
+        userRef.addListenerForSingleValueEvent((new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                instanceId.add(dataSnapshot.getValue(String.class));
+                for(DataSnapshot user: dataSnapshot.getChildren()) {
+                    String userId = user.getKey();
+                    String instanceId = user.child("instanceId").getValue(String.class);
+                    instanceIds.put(userId, instanceId);
+                }
             }
-
             @Override
             public void onCancelled(DatabaseError databaseError) {}
         }));
-        return instanceId;
+        return instanceIds;
     }
 
     //One time script to extract info from user_chats section and populate info section in chats
