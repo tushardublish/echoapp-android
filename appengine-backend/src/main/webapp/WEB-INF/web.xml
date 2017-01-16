@@ -11,6 +11,10 @@
             <param-name>databaseUrl</param-name>
             <param-value>https://echoapp-5e21e.firebaseio.com</param-value>
         </init-param>
+        <init-param>
+            <param-name>apiKey</param-name>
+            <param-value>AAAAJudZXIQ:APA91bG2sneJVDhM-Mh17bVYkBTtolDxb0UtqZjLujcqQskDmSOSRDUR1a3b0ceVw08bMBXozZn9_PqFuJokvRFGkGbj_af1aC-ZcEqOkkL7FKcvBnYE3PF7cgd_Llvw-__TxLM32r46x9BaoNq8eADx-G-b8rvc3A</param-value>
+        </init-param>
         <load-on-startup>0</load-on-startup>
     </servlet>
     <servlet-mapping>

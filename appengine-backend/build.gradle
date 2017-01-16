@@ -21,6 +21,10 @@ apply plugin: 'appengine'
 sourceCompatibility = JavaVersion.VERSION_1_7
 targetCompatibility = JavaVersion.VERSION_1_7
 
+repositories {
+    mavenCentral()
+}
+
 dependencies {
     appengineSdk 'com.google.appengine:appengine-java-sdk:1.9.34'
     compile 'javax.servlet:servlet-api:2.5'
@@ -28,7 +32,6 @@ dependencies {
     compile 'com.google.firebase:firebase-server-sdk:3.0.3'
     compile 'org.apache.httpcomponents:httpclient:4.5.2'
     compile 'com.google.appengine:appengine-api-1.0-sdk:1.9.48'
-    compile project(path: ':library')
     compile 'com.google.appengine:appengine-endpoints:1.9.48'
     compile 'com.firebase:geofire-java:2.1.1'
 }

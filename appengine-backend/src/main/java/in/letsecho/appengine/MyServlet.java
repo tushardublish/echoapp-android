@@ -29,11 +29,13 @@ import java.util.Map;
 import javax.servlet.ServletConfig;
 import javax.servlet.http.*;
 
-import in.letsecho.library.ChatMessage;
+import in.letsecho.appengine.library.ChatMessage;
+
 
 public class MyServlet extends HttpServlet {
 
     private static String TAG = "MyServletNotifications";
+    private String apiKey;
     private DatabaseReference rootDbRef, chatDbRef;
     private ArrayList<DatabaseReference> messageDbRefList;
     private ChildEventListener chatEventListener;
@@ -47,6 +49,7 @@ public class MyServlet extends HttpServlet {
         messageEventListenerList = new ArrayList<>();
         String credential = config.getInitParameter("credential");
         String databaseUrl = config.getInitParameter("databaseUrl");
+        apiKey = config.getInitParameter("apiKey");
         FirebaseOptions options = new FirebaseOptions.Builder()
                 .setServiceAccount(config.getServletContext().getResourceAsStream(credential))
                 .setDatabaseUrl(databaseUrl)
@@ -118,12 +121,10 @@ public class MyServlet extends HttpServlet {
     }
 
     private void sendNotificationToUser(String userId, ChatMessage message) throws Exception{
-        String apiKey = "AAAAJudZXIQ:APA91bG2sneJVDhM-Mh17bVYkBTtolDxb0UtqZjLujcqQskDmSOSRDUR1a3b0ceVw08bMBXozZn9_PqFuJokvRFGkGbj_af1aC-ZcEqOkkL7FKcvBnYE3PF7cgd_Llvw-__TxLM32r46x9BaoNq8eADx-G-b8rvc3A";
         String instanceId = userInstances.get(userId);
         if(instanceId == null)  //if instanceId has not been inserted then send it to tushar. Remove it later.
             instanceId = userInstances.get("vBnYd7839IMcCw0H5XaELsnMVfD2");
         String url = "https://fcm.googleapis.com/fcm/send";
-
         URL urlObj = new URL(url);
         HttpURLConnection con = (HttpURLConnection) urlObj.openConnection();
 
@@ -131,8 +132,6 @@ public class MyServlet extends HttpServlet {
         con.setRequestMethod("POST");
         con.setRequestProperty("Content-Type", "application/json");
         con.setRequestProperty("Authorization", "key=" + apiKey);
-//        con.setRequestProperty("User-Agent", "Mozilla/5.0");
-//        con.setRequestProperty("Accept-Language", "en-US,en;q=0.5");
 
         JsonObject obj = new JsonObject();
         obj.addProperty("to", instanceId);

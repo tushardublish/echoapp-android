@@ -1,5 +1,10 @@
-// Any changes made here needs to be copied to appengine-backend/library
-package in.letsecho.library;
+/*
+    Dated: 16th Jan 2017
+    Copied from library, as I was not able to figure out how to import gradle project in maven project.
+    It was required when we use maven commands to build and deploy backend project.
+    Either GCP might soon migrate AppEngine Flexible to gradle soon or we might have to figure out a way later.
+*/
+package in.letsecho.appengine.library;
 
 import java.util.HashMap;
 
