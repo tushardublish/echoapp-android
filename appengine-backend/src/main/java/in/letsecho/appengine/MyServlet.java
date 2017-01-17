@@ -69,6 +69,7 @@ public class MyServlet extends HttpServlet {
                 @Override
                 public void onChildAdded(DataSnapshot dataSnapshot, String s) {
                     String chatId = dataSnapshot.getKey();
+                    //Optimization: Should check only last 100 messages for a chat.
                     DatabaseReference messageDbRef = chatDbRef.child(chatId);
                     ChildEventListener messageEventListener = getMessageListener(chatId);
                     messageDbRef.addChildEventListener(messageEventListener);
@@ -158,40 +159,60 @@ public class MyServlet extends HttpServlet {
     private HashMap getUsersFromChat() {
         final HashMap<String, List<String>> chatList = new HashMap<>();
         DatabaseReference chatInfoDbRef = rootDbRef.child("chats/info");
-        chatInfoDbRef.addListenerForSingleValueEvent((new ValueEventListener() {
+        chatInfoDbRef.addChildEventListener(new ChildEventListener() {
             @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                for(DataSnapshot chat: dataSnapshot.getChildren()) {
-                    String chatId = chat.getKey();
-                    List<String> userList = new ArrayList();
-                    for(DataSnapshot user: chat.child("users").getChildren()) {
-                        String userId = user.getKey();
-                        userList.add(userId);
-                    }
-                    chatList.put(chatId, userList);
+            public void onChildAdded(DataSnapshot chat, String s) {
+                String chatId = chat.getKey();
+                List<String> userList = new ArrayList();
+                for(DataSnapshot user: chat.child("users").getChildren()) {
+                    String userId = user.getKey();
+                    userList.add(userId);
                 }
+                chatList.put(chatId, userList);
             }
             @Override
+            public void onChildChanged(DataSnapshot chat, String s) {
+                String chatId = chat.getKey();
+                List<String> userList = new ArrayList();
+                for(DataSnapshot user: chat.child("users").getChildren()) {
+                    String userId = user.getKey();
+                    userList.add(userId);
+                }
+                chatList.put(chatId, userList);
+            }
+            @Override
+            public void onChildRemoved(DataSnapshot dataSnapshot) {}
+            @Override
+            public void onChildMoved(DataSnapshot dataSnapshot, String s) {}
+            @Override
             public void onCancelled(DatabaseError databaseError) {}
-        }));
+        });
         return chatList;
     }
 
     private HashMap getUserInstances() {
         final HashMap<String, String> instanceIds = new HashMap<>();
         DatabaseReference userRef = rootDbRef.child("users");
-        userRef.addListenerForSingleValueEvent((new ValueEventListener() {
+        userRef.addChildEventListener(new ChildEventListener() {
             @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                for(DataSnapshot user: dataSnapshot.getChildren()) {
-                    String userId = user.getKey();
-                    String instanceId = user.child("instanceId").getValue(String.class);
-                    instanceIds.put(userId, instanceId);
-                }
+            public void onChildAdded(DataSnapshot user, String s) {
+                String userId = user.getKey();
+                String instanceId = user.child("instanceId").getValue(String.class);
+                instanceIds.put(userId, instanceId);
             }
             @Override
+            public void onChildChanged(DataSnapshot user, String s) {
+                String userId = user.getKey();
+                String instanceId = user.child("instanceId").getValue(String.class);
+                instanceIds.put(userId, instanceId);
+            }
+            @Override
+            public void onChildRemoved(DataSnapshot dataSnapshot) {}
+            @Override
+            public void onChildMoved(DataSnapshot dataSnapshot, String s) {}
+            @Override
             public void onCancelled(DatabaseError databaseError) {}
-        }));
+        });
         return instanceIds;
     }
 

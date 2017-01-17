@@ -36,6 +36,8 @@ import java.util.List;
 import in.letsecho.echoapp.service.LocationSyncService;
 import in.letsecho.echoapp.library.UserProfile;
 
+import static in.letsecho.echoapp.R.string.app_name;
+
 public class MainActivity extends AppCompatActivity {
 
     private static String TAG = "MainActivity";
@@ -59,7 +61,7 @@ public class MainActivity extends AppCompatActivity {
         mUsersDbRef = mFirebaseDatabase.getReference().child("users");
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        toolbar.setTitle("Echo");
+        toolbar.setTitle(getString(R.string.app_name));
 
         TabLayout tabLayout = (TabLayout) findViewById(R.id.tab_layout);
         tabLayout.addTab(tabLayout.newTab().setText("Explore"));

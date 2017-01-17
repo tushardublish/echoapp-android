@@ -19,7 +19,7 @@
     </servlet>
     <servlet-mapping>
         <servlet-name>MyServlet</servlet-name>
-        <url-pattern>/hello</url-pattern>
+        <url-pattern>/_ah/start</url-pattern>
     </servlet-mapping>
     <!--<servlet>-->
         <!--<servlet-name>SystemServiceServlet</servlet-name>-->

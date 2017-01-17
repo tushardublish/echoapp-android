@@ -1,0 +1,4 @@
+# This file is required to activate Google Snapshot Debugger
+# But this is giving issue in Gradle Build
+env_variables:
+ 'DBG_ENABLE': 'true'
