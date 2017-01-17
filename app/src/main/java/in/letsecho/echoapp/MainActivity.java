@@ -3,7 +3,6 @@ package in.letsecho.echoapp;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.TabLayout;
@@ -26,17 +25,13 @@ import com.firebase.jobdispatcher.Trigger;
 import com.firebase.ui.auth.AuthUI;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.auth.UserInfo;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.iid.FirebaseInstanceId;
 
-import java.util.List;
-
 import in.letsecho.echoapp.service.LocationSyncService;
 import in.letsecho.echoapp.library.UserProfile;
-
-import static in.letsecho.echoapp.R.string.app_name;
+import in.letsecho.echoapp.service.MyFirebaseInstanceIDService;
 
 public class MainActivity extends AppCompatActivity {
 

@@ -140,6 +140,7 @@ public class MyServlet extends HttpServlet {
         JsonObject notification = new JsonObject();
         notification.addProperty("title", message.getName());
         notification.addProperty("body", message.getText());
+        notification.addProperty("sound", "default");
         obj.add("notification",notification);
         String postJsonData = obj.toString();
 

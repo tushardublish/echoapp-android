@@ -21,7 +21,7 @@
         </activity>
 
         <!-- For recording InstanceID for device and sending notifications to individual users -->
-        <service android:name=".MyFirebaseInstanceIDService">
+        <service android:name=".service.MyFirebaseInstanceIDService">
             <intent-filter>
                 <action android:name="com.google.firebase.INSTANCE_ID_EVENT" />
             </intent-filter>

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package in.letsecho.echoapp;
+package in.letsecho.echoapp.service;
 
 import android.util.Log;
 
