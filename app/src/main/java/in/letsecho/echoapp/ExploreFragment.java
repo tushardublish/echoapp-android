@@ -62,7 +62,7 @@ public class ExploreFragment extends Fragment {
         mCurrentPeopleListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                UserProfile person = mCurrentPeopleAdapter.getItem(position);
+                UserProfile person = mCurrentPeopleAdapter.getItem(position-1);
                 Intent intent = new Intent(getActivity().getApplicationContext(), ChatActivity.class)
                         .putExtra("CHAT_USER", person.getUID());
                 startActivity(intent);
@@ -76,7 +76,7 @@ public class ExploreFragment extends Fragment {
         mPastPeopleListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                UserProfile person = mPastPeopleAdapter.getItem(position);
+                UserProfile person = mPastPeopleAdapter.getItem(position-1);
                 Intent intent = new Intent(getActivity().getApplicationContext(), ChatActivity.class)
                         .putExtra("CHAT_USER", person.getUID());
                 startActivity(intent);
@@ -159,7 +159,8 @@ public class ExploreFragment extends Fragment {
                 @Override
                 public void onKeyEntered(String key, GeoLocation location) {
                     //Tudu: Should add new user at position based on the distance
-                    addUserToCurrentList(key);
+                    if(!key.equals(mCurrentUser.getUid()))
+                        addUserToCurrentList(key);
                 }
                 @Override
                 public void onKeyExited(String key) {
@@ -189,7 +190,8 @@ public class ExploreFragment extends Fragment {
                         String secondaryUserId = secondaryUser.getKey();
                         int hourDiff = (int)((System.currentTimeMillis() - secondaryUser.getValue(Long.class))
                                 /HOURS_TO_MILLI_SECS);
-                        addUserToPastList(secondaryUserId, hourDiff);
+                        if(!secondaryUserId.equals(mCurrentUser.getUid()))
+                            addUserToPastList(secondaryUserId, hourDiff);
                     }
                 }
                 @Override
@@ -250,6 +252,11 @@ public class ExploreFragment extends Fragment {
         if(mNearbyPeopleEventListener != null) {
             mNearbyPeopleGeoQuery.removeGeoQueryEventListener(mNearbyPeopleEventListener);
             mNearbyPeopleEventListener = null;
+        }
+
+        if(mPastPeopleEventListener != null) {
+            mPastLocationDbRef.removeEventListener(mPastPeopleEventListener);
+            mPastPeopleEventListener = null;
         }
     }
 }

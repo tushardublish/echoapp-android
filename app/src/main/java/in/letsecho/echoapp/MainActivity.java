@@ -79,8 +79,48 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onTabReselected(TabLayout.Tab tab) {}
         });
+        checkForPermissions();
+    }
 
-        mAuthStateListener = new FirebaseAuth.AuthStateListener() {
+    @Override
+    public void onResume() {
+        super.onResume();
+        if(mAuthStateListener == null) {
+            mAuthStateListener = getAuthStateListener();
+            mFirebaseAuth.addAuthStateListener(mAuthStateListener);
+        }
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        if (mAuthStateListener != null) {
+            mFirebaseAuth.removeAuthStateListener(mAuthStateListener);
+            mAuthStateListener = null;
+        }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.main_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.sign_out_menu:
+                mCurrentUser = null;
+                AuthUI.getInstance().signOut(this);
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+    private FirebaseAuth.AuthStateListener getAuthStateListener() {
+        FirebaseAuth.AuthStateListener authStateListener = new FirebaseAuth.AuthStateListener() {
             @Override
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
                 mCurrentUser = firebaseAuth.getCurrentUser();
@@ -101,7 +141,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         };
-        checkForPermissions();
+        return authStateListener;
     }
 
     @Override
@@ -125,46 +165,12 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    public void onResume() {
-        super.onResume();
-        mFirebaseAuth.addAuthStateListener(mAuthStateListener);
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-        if (mAuthStateListener != null) {
-            mFirebaseAuth.removeAuthStateListener(mAuthStateListener);
-        }
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.main_menu, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.sign_out_menu:
-                mCurrentUser = null;
-                AuthUI.getInstance().signOut(this);
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
-        }
-    }
-
     private void InitializeUser() {
         InitiateLocationSyncJob();
-
         //To update Insatance id for users. Can be removed after 1st Feb 2017.
         MyFirebaseInstanceIDService firebaseInstance = new MyFirebaseInstanceIDService();
         String refreshedToken = FirebaseInstanceId.getInstance().getToken();
-        firebaseInstance.sendRegistrationToServer(refreshedToken);
+        firebaseInstance.sendRegistrationToServer(mCurrentUser.getUid(), refreshedToken);
     }
 
     private void InitiateLocationSyncJob(){

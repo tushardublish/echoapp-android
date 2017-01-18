@@ -26,10 +26,6 @@ import java.util.List;
 import in.letsecho.echoapp.library.UserDisplayModel;
 import in.letsecho.echoapp.library.UserProfile;
 
-/**
- * Created by Tushar on 02-01-2017.
- */
-
 public class ConnectFragment extends Fragment {
 
     FirebaseUser currentUser;
@@ -88,10 +84,10 @@ public class ConnectFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+        chatDbRefs = new ArrayList<Query>();
+        chatListeners = new ArrayList<ValueEventListener>();
         currentUser = firebaseAuth.getCurrentUser();
         if(currentUser != null) {
-            chatDbRefs = new ArrayList<Query>();
-            chatListeners = new ArrayList<ValueEventListener>();
             attachDatabaseReadListener();
         }
     }
@@ -113,9 +109,11 @@ public class ConnectFragment extends Fragment {
                 @Override
                 public void onChildAdded(DataSnapshot dataSnapshot, String s) {
                     String secondaryUserId = dataSnapshot.getKey();
-                    String chatId = dataSnapshot.getValue(String.class);
-                    addUserToList(secondaryUserId);
-                    setChatListener(chatId, secondaryUserId);
+                    if(!secondaryUserId.equals(currentUser.getUid())) {
+                        String chatId = dataSnapshot.getValue(String.class);
+                        addUserToList(secondaryUserId);
+                        setChatListener(chatId, secondaryUserId);
+                    }
                 }
 
                 public void onChildChanged(DataSnapshot dataSnapshot, String s) {}

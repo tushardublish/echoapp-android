@@ -45,8 +45,8 @@ import in.letsecho.echoapp.library.UserProfile;
 public class ChatActivity extends AppCompatActivity {
 
     private static final String TAG = "ChatActivity";
-
     public static final String ANONYMOUS = "anonymous";
+    public static String SECONDARY_USER = "secondary_user";
     public static final int DEFAULT_MSG_LENGTH_LIMIT = 1000;
     public static final int RC_SIGN_IN = 1;
     private static final int RC_PHOTO_PICKER =  2;
@@ -60,13 +60,12 @@ public class ChatActivity extends AppCompatActivity {
     private Toolbar toolbar;
 
     private FirebaseUser currentUser;
-    private String mUsername, secondaryUid;
-    private String chatId;
+    private String secondaryUid, chatId;
 
     private FirebaseDatabase mFirebaseDatabase;
     private DatabaseReference mChatsDbRef, mSecondaryUserDbRef, currentChatDbRef;
     private DatabaseReference currentUserChatQuery;
-    private ChildEventListener messageEventListener;
+    private ChildEventListener mMessageEventListener;
     private ValueEventListener secondaryUserEventListener, currentUserChatsEventListener;
     private FirebaseAuth mFirebaseAuth;
     private FirebaseAuth.AuthStateListener mAuthStateListener;
@@ -77,8 +76,6 @@ public class ChatActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
-
-        mUsername = ANONYMOUS;
 
         // Initialize Firebase components
         mFirebaseDatabase = FirebaseDatabase.getInstance();
@@ -99,14 +96,6 @@ public class ChatActivity extends AppCompatActivity {
         List<ChatMessage> chatMessages = new ArrayList<>();
         mMessageAdapter = new MessageAdapter(this, R.layout.item_message, chatMessages);
         mMessageListView.setAdapter(mMessageAdapter);
-
-        // Initialize Intent
-        Intent intent = getIntent();
-        if (intent != null && intent.hasExtra("CHAT_USER"))
-        {
-            secondaryUid = intent.getStringExtra("CHAT_USER");
-            mSecondaryUserDbRef = mFirebaseDatabase.getReference().child("users").child(secondaryUid);
-        }
 
         // Initialize progress bar
         mProgressBar.setVisibility(ProgressBar.INVISIBLE);
@@ -149,25 +138,52 @@ public class ChatActivity extends AppCompatActivity {
             public void onClick(View view) {
                 // TODO: Send messages on click
                 ChatMessage chatMessage = new ChatMessage(mMessageEditText.getText().toString(),
-                        mUsername, currentUser.getUid(), null, new HashMap());
+                        currentUser.getDisplayName(), currentUser.getUid(), null, new HashMap());
                 currentChatDbRef.push().setValue(chatMessage);
 
                 // Clear input box
                 mMessageEditText.setText("");
             }
         });
-
-        InitializeAuthListener();
     }
 
-    private void InitializeAuthListener() {
-        mAuthStateListener = new FirebaseAuth.AuthStateListener() {
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (mAuthStateListener == null) {
+            mAuthStateListener = getAuthStateListener();
+            mFirebaseAuth.addAuthStateListener(mAuthStateListener);
+        }
+
+        // Initialize Intent
+        Intent intent = getIntent();
+        if (intent != null && intent.hasExtra("CHAT_USER"))
+        {
+            secondaryUid = intent.getStringExtra("CHAT_USER");
+            mSecondaryUserDbRef = mFirebaseDatabase.getReference().child("users").child(secondaryUid);
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (mAuthStateListener != null) {
+            mFirebaseAuth.removeAuthStateListener(mAuthStateListener);
+            mAuthStateListener = null;
+        }
+        mMessageAdapter.clear();
+        detachDatabaseReadListener();
+    }
+
+    private FirebaseAuth.AuthStateListener getAuthStateListener() {
+        FirebaseAuth.AuthStateListener authStateListener = new FirebaseAuth.AuthStateListener() {
             @Override
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
                 currentUser = firebaseAuth.getCurrentUser();
                 if (currentUser != null) {
                     // User is signed in
-                    onSignedInInitialize(currentUser.getDisplayName());
+                    onSignedInInitialize();
                 } else {
                     // User is signed out
                     onSignedOutCleanup();
@@ -183,6 +199,7 @@ public class ChatActivity extends AppCompatActivity {
                 }
             }
         };
+        return authStateListener;
     }
 
     @Override
@@ -212,7 +229,7 @@ public class ChatActivity extends AppCompatActivity {
                             Uri downloadUrl = taskSnapshot.getDownloadUrl();
 
                             // Set the download URL to the message box, so that the user can send it to the database
-                            ChatMessage chatMessage = new ChatMessage(null, mUsername,
+                            ChatMessage chatMessage = new ChatMessage(null, currentUser.getDisplayName(),
                                     currentUser.getUid(), downloadUrl.toString(), new HashMap());
                             currentChatDbRef.push().setValue(chatMessage);
                         }
@@ -220,38 +237,17 @@ public class ChatActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if (mAuthStateListener == null) {
-            InitializeAuthListener();
-        }
-        mFirebaseAuth.addAuthStateListener(mAuthStateListener);
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        if (mAuthStateListener != null) {
-            mFirebaseAuth.removeAuthStateListener(mAuthStateListener);
-        }
-        mMessageAdapter.clear();
-        detachDatabaseReadListener();
-    }
-
-    private void onSignedInInitialize(String username) {
-        mUsername = username;
+    private void onSignedInInitialize() {
         attachDatabaseReadListener();
     }
 
     private void onSignedOutCleanup() {
-        mUsername = ANONYMOUS;
         mMessageAdapter.clear();
         detachDatabaseReadListener();
     }
 
     private void attachDatabaseReadListener() {
-
+        //To get secondary user name
         if (secondaryUserEventListener == null) {
             secondaryUserEventListener = new ValueEventListener() {
                 @Override
@@ -265,6 +261,7 @@ public class ChatActivity extends AppCompatActivity {
             mSecondaryUserDbRef.addValueEventListener(secondaryUserEventListener);
         }
 
+        // Get chatId or create a new chat
         currentUserChatQuery = mChatsDbRef.child("user_chats").child(currentUser.getUid()).child(secondaryUid);
         if (currentUserChatsEventListener == null) {
             currentUserChatsEventListener = new ValueEventListener() {
@@ -285,9 +282,10 @@ public class ChatActivity extends AppCompatActivity {
                         mChatsDbRef.child("user_chats").child(secondaryUid).child(currentUser.getUid()).setValue(chatId);
                     }
 
-                    if (currentChatDbRef == null) {
+                    if(mMessageEventListener == null) {
+                        mMessageEventListener = getMessageEventListener();
                         currentChatDbRef = mChatsDbRef.child("messages").child(chatId);
-                        currentChatDbRef.addChildEventListener(messageEventListener);
+                        currentChatDbRef.addChildEventListener(mMessageEventListener);
                     }
                 };
                 @Override
@@ -295,35 +293,34 @@ public class ChatActivity extends AppCompatActivity {
             };
             currentUserChatQuery.addValueEventListener(currentUserChatsEventListener);
         }
+    }
 
-
-        if (messageEventListener == null) {
-            messageEventListener = new ChildEventListener() {
-                @Override
-                public void onChildAdded(DataSnapshot dataSnapshot, String s) {
-                    ChatMessage chatMessage = dataSnapshot.getValue(ChatMessage.class);
-                    mMessageAdapter.add(chatMessage);
-                    //Mark message as seen
-                    String userId = currentUser.getUid();
-                    Boolean seen_status = chatMessage.getSeenForUser(userId);
-                    if(chatMessage.getSenderUid() != userId && seen_status == Boolean.FALSE){
-                        chatMessage.setSeenForUser(userId);
-                        currentChatDbRef.child(dataSnapshot.getKey()).setValue(chatMessage);
-                    }
+    private ChildEventListener getMessageEventListener() {
+        ChildEventListener messageEventListener = new ChildEventListener() {
+            @Override
+            public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+                ChatMessage chatMessage = dataSnapshot.getValue(ChatMessage.class);
+                mMessageAdapter.add(chatMessage);
+                //Mark message as seen
+                String userId = currentUser.getUid();
+                Boolean seen_status = chatMessage.getSeenForUser(userId);
+                if(chatMessage.getSenderUid() != userId && seen_status == Boolean.FALSE){
+                    chatMessage.setSeenForUser(userId);
+                    currentChatDbRef.child(dataSnapshot.getKey()).setValue(chatMessage);
                 }
-
-                public void onChildChanged(DataSnapshot dataSnapshot, String s) {}
-                public void onChildRemoved(DataSnapshot dataSnapshot) {}
-                public void onChildMoved(DataSnapshot dataSnapshot, String s) {}
-                public void onCancelled(DatabaseError databaseError) {}
-            };
-        }
+            }
+            public void onChildChanged(DataSnapshot dataSnapshot, String s) {}
+            public void onChildRemoved(DataSnapshot dataSnapshot) {}
+            public void onChildMoved(DataSnapshot dataSnapshot, String s) {}
+            public void onCancelled(DatabaseError databaseError) {}
+        };
+        return messageEventListener;
     }
 
     private void detachDatabaseReadListener() {
-        if (messageEventListener != null) {
-            mChatsDbRef.removeEventListener(messageEventListener);
-            messageEventListener = null;
+        if (mMessageEventListener != null) {
+            mChatsDbRef.removeEventListener(mMessageEventListener);
+            mMessageEventListener = null;
         }
 
         if (secondaryUserEventListener != null) {
