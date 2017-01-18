@@ -28,33 +28,31 @@ import in.letsecho.echoapp.library.UserProfile;
 
 public class ConnectFragment extends Fragment {
 
-    FirebaseUser currentUser;
+    private ListView mPersonListView;
+    private PersonAdapter mPersonAdapter;
+    private ProgressBar mProgressBar;
 
-    private ListView personListView;
-    private PersonAdapter personAdapter;
-    private ProgressBar progressBar;
-
-    private FirebaseAuth firebaseAuth;
-    private FirebaseDatabase firebaseDatabase;
-    private DatabaseReference rootDbRef;
-    private Query userChatsDbRef;
-    private ArrayList<Query> chatDbRefs;
-    private ChildEventListener userChatsEventListener;
-    private ArrayList<ValueEventListener> chatListeners;
-
-    List<UserDisplayModel> persons;
+    private FirebaseUser mCurrentUser;
+    private FirebaseAuth mFirebaseAuth;
+    private FirebaseDatabase mFirebaseDatabase;
+    private DatabaseReference mRootDbRef;
+    private Query mUserChatsDbRef;
+    private ArrayList<Query> mChatDbRefs;
+    private ChildEventListener mUserChatsEventListener;
+    private ArrayList<ValueEventListener> mChatListeners;
+    private List<UserDisplayModel> mPersons;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_connect, container, false);
         // Initialize references to views
-        personListView = (ListView) view.findViewById(R.id.personListView);
-        personListView.setAdapter(personAdapter);
-        personListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        mPersonListView = (ListView) view.findViewById(R.id.personListView);
+        mPersonListView.setAdapter(mPersonAdapter);
+        mPersonListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                UserProfile person = personAdapter.getItem(position);
+                UserProfile person = mPersonAdapter.getItem(position);
                 Intent intent = new Intent(getActivity().getApplicationContext(), ChatActivity.class)
                         .putExtra("CHAT_USER", person.getUID());
                 startActivity(intent);
@@ -62,8 +60,8 @@ public class ConnectFragment extends Fragment {
         });
 
         // Initialize progress bar
-        progressBar = (ProgressBar) view.findViewById(R.id.progressBar);
-        progressBar.setVisibility(ProgressBar.INVISIBLE);
+        mProgressBar = (ProgressBar) view.findViewById(R.id.progressBar);
+        mProgressBar.setVisibility(ProgressBar.INVISIBLE);
         return view;
     }
 
@@ -72,22 +70,22 @@ public class ConnectFragment extends Fragment {
         super.onCreate(savedInstanceState);
 
         // Initialize Firebase components
-        firebaseAuth = FirebaseAuth.getInstance();
-        firebaseDatabase = FirebaseDatabase.getInstance();
-        rootDbRef = firebaseDatabase.getReference();
+        mFirebaseAuth = FirebaseAuth.getInstance();
+        mFirebaseDatabase = FirebaseDatabase.getInstance();
+        mRootDbRef = mFirebaseDatabase.getReference();
 
         // Initialize person ListView and its adapter
-        persons = new ArrayList<>();
-        personAdapter = new PersonAdapter(this.getContext(), R.layout.item_person, persons);
+        mPersons = new ArrayList<>();
+        mPersonAdapter = new PersonAdapter(this.getContext(), R.layout.item_person, mPersons);
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        chatDbRefs = new ArrayList<Query>();
-        chatListeners = new ArrayList<ValueEventListener>();
-        currentUser = firebaseAuth.getCurrentUser();
-        if(currentUser != null) {
+        mChatDbRefs = new ArrayList<Query>();
+        mChatListeners = new ArrayList<ValueEventListener>();
+        mCurrentUser = mFirebaseAuth.getCurrentUser();
+        if(mCurrentUser != null) {
             attachDatabaseReadListener();
         }
     }
@@ -95,21 +93,21 @@ public class ConnectFragment extends Fragment {
     @Override
     public void onPause() {
         super.onPause();
-        currentUser = null;
-        personAdapter.clear();
+        mCurrentUser = null;
+        mPersonAdapter.clear();
         detachDatabaseReadListener();
-        chatDbRefs.clear();
-        chatListeners.clear();
+        mChatDbRefs.clear();
+        mChatListeners.clear();
     }
 
     private void attachDatabaseReadListener() {
-        userChatsDbRef = rootDbRef.child("chats/user_chats").child(currentUser.getUid()).orderByValue().limitToLast(1000);
-        if (userChatsEventListener == null) {
-            userChatsEventListener = new ChildEventListener() {
+        mUserChatsDbRef = mRootDbRef.child("chats/user_chats").child(mCurrentUser.getUid()).orderByValue().limitToLast(1000);
+        if (mUserChatsEventListener == null) {
+            mUserChatsEventListener = new ChildEventListener() {
                 @Override
                 public void onChildAdded(DataSnapshot dataSnapshot, String s) {
                     String secondaryUserId = dataSnapshot.getKey();
-                    if(!secondaryUserId.equals(currentUser.getUid())) {
+                    if(!secondaryUserId.equals(mCurrentUser.getUid())) {
                         String chatId = dataSnapshot.getValue(String.class);
                         addUserToList(secondaryUserId);
                         setChatListener(chatId, secondaryUserId);
@@ -121,17 +119,17 @@ public class ConnectFragment extends Fragment {
                 public void onChildMoved(DataSnapshot dataSnapshot, String s) {}
                 public void onCancelled(DatabaseError databaseError) {}
             };
-            userChatsDbRef.addChildEventListener(userChatsEventListener);
+            mUserChatsDbRef.addChildEventListener(mUserChatsEventListener);
         }
     }
 
     private void addUserToList(String secondaryUserId) {
-        DatabaseReference userDbRef = rootDbRef.child("users").child(secondaryUserId);
+        DatabaseReference userDbRef = mRootDbRef.child("users").child(secondaryUserId);
         userDbRef.addListenerForSingleValueEvent((new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 UserDisplayModel secondaryUser = dataSnapshot.getValue(UserDisplayModel.class);
-                personAdapter.add(secondaryUser);
+                mPersonAdapter.add(secondaryUser);
             }
 
             @Override
@@ -141,34 +139,34 @@ public class ConnectFragment extends Fragment {
 
     //Adding Listeners to each chat to get unread messages count
     private void setChatListener(String chatId, final String secondaryUserId) {
-        Query chatDbRef = rootDbRef.child("chats/messages").child(chatId)
-                .orderByChild("seen/"+currentUser.getUid()).equalTo(null);
+        Query chatDbRef = mRootDbRef.child("chats/messages").child(chatId)
+                .orderByChild("seen/"+ mCurrentUser.getUid()).equalTo(null);
         ValueEventListener chatListener = chatDbRef.addValueEventListener((new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 Long unreadMessageCount = dataSnapshot.getChildrenCount();
-                int index = UserDisplayModel.findProfileOnUid(persons, secondaryUserId);
+                int index = UserDisplayModel.findProfileOnUid(mPersons, secondaryUserId);
                 if(index >= 0 && unreadMessageCount > 0) {
-                    persons.get(index).setRightAlignedInfo(unreadMessageCount.toString());
-                    personAdapter.notifyDataSetChanged();
+                    mPersons.get(index).setRightAlignedInfo(unreadMessageCount.toString());
+                    mPersonAdapter.notifyDataSetChanged();
                 }
             }
 
             @Override
             public void onCancelled(DatabaseError databaseError) {}
         }));
-        chatDbRefs.add(chatDbRef);
-        chatListeners.add(chatListener);
+        mChatDbRefs.add(chatDbRef);
+        mChatListeners.add(chatListener);
     }
 
     private void detachDatabaseReadListener() {
-        if (userChatsEventListener != null) {
-            userChatsDbRef.removeEventListener(userChatsEventListener);
-            userChatsEventListener = null;
+        if (mUserChatsEventListener != null) {
+            mUserChatsDbRef.removeEventListener(mUserChatsEventListener);
+            mUserChatsEventListener = null;
         }
 
-        for(int i=0; i< chatDbRefs.size(); i++){
-            chatDbRefs.get(i).removeEventListener(chatListeners.get(i));
+        for(int i = 0; i< mChatDbRefs.size(); i++){
+            mChatDbRefs.get(i).removeEventListener(mChatListeners.get(i));
         }
     }
 }
