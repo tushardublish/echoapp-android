@@ -102,9 +102,9 @@ public class ChatActivity extends AppCompatActivity {
 
         // Initialize Intent
         Intent intent = getIntent();
-        if (intent != null && intent.hasExtra(Intent.EXTRA_USER))
+        if (intent != null && intent.hasExtra("CHAT_USER"))
         {
-            secondaryUid = intent.getStringExtra(Intent.EXTRA_USER);
+            secondaryUid = intent.getStringExtra("CHAT_USER");
             mSecondaryUserDbRef = mFirebaseDatabase.getReference().child("users").child(secondaryUid);
         }
 

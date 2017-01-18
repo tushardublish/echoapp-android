@@ -64,7 +64,7 @@ public class ExploreFragment extends Fragment {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 UserProfile person = mCurrentPeopleAdapter.getItem(position);
                 Intent intent = new Intent(getActivity().getApplicationContext(), ChatActivity.class)
-                        .putExtra(Intent.EXTRA_USER, person.getUID());
+                        .putExtra("CHAT_USER", person.getUID());
                 startActivity(intent);
             }
         });
@@ -78,7 +78,7 @@ public class ExploreFragment extends Fragment {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 UserProfile person = mPastPeopleAdapter.getItem(position);
                 Intent intent = new Intent(getActivity().getApplicationContext(), ChatActivity.class)
-                        .putExtra(Intent.EXTRA_USER, person.getUID());
+                        .putExtra("CHAT_USER", person.getUID());
                 startActivity(intent);
             }
         });

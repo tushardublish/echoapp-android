@@ -60,7 +60,7 @@ public class ConnectFragment extends Fragment {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 UserProfile person = personAdapter.getItem(position);
                 Intent intent = new Intent(getActivity().getApplicationContext(), ChatActivity.class)
-                        .putExtra(Intent.EXTRA_USER, person.getUID());
+                        .putExtra("CHAT_USER", person.getUID());
                 startActivity(intent);
             }
         });
