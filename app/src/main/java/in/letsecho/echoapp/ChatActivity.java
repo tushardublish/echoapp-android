@@ -238,6 +238,7 @@ public class ChatActivity extends AppCompatActivity {
     }
 
     private void onSignedInInitialize() {
+        mMessageAdapter.setUserId(mCurrentUser.getUid());
         attachDatabaseReadListener();
     }
 
