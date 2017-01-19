@@ -2,7 +2,9 @@ package in.letsecho.echoapp;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,6 +16,8 @@ import com.firebase.geofire.GeoFire;
 import com.firebase.geofire.GeoLocation;
 import com.firebase.geofire.GeoQuery;
 import com.firebase.geofire.GeoQueryEventListener;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.ChildEventListener;
@@ -23,6 +27,8 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
+import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,11 +38,13 @@ import in.letsecho.echoapp.library.UserProfile;
 
 public class ExploreFragment extends Fragment {
     private static String TAG = "ExploreFragment";
+    private static final String NEARBY_DISTANCE_CONFIG_KEY = "nearby_distance";
     private static long HOURS_TO_MILLI_SECS = 60*60*1000;
     private ListView mCurrentPeopleListView, mPastPeopleListView;
     private PersonAdapter mCurrentPeopleAdapter, mPastPeopleAdapter;
     private ProgressBar mProgressBar;
-    List<UserDisplayModel> mCurrentPeople, mPastPeople;
+    private List<UserDisplayModel> mCurrentPeople, mPastPeople;
+    private double mNearbyDistance; //(Km)
 
     private FirebaseDatabase mFirebaseDatabase;
     private DatabaseReference mUsersDbRef, mLocationsDbRef, mCurrentLocationDbRef;
@@ -49,6 +57,7 @@ public class ExploreFragment extends Fragment {
     private GeoFire mNearbyPeopleGeoRef;
     private GeoQuery mNearbyPeopleGeoQuery;
     private GeoLocation mCurrentLocation;
+    private FirebaseRemoteConfig mFirebaseRemoteConfig;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -105,6 +114,16 @@ public class ExploreFragment extends Fragment {
         mCurrentPeopleAdapter = new PersonAdapter(this.getContext(), R.layout.item_person, mCurrentPeople);
         mPastPeople = new ArrayList<>();
         mPastPeopleAdapter = new PersonAdapter(this.getContext(), R.layout.item_person, mPastPeople);
+
+        //Setting Remote Config
+        mFirebaseRemoteConfig = FirebaseRemoteConfig.getInstance();
+        FirebaseRemoteConfigSettings configSettings = new FirebaseRemoteConfigSettings.Builder()
+                .setDeveloperModeEnabled(BuildConfig.DEBUG)
+                .build();
+        mFirebaseRemoteConfig.setConfigSettings(configSettings);
+        mFirebaseRemoteConfig.setDefaults(R.xml.remote_config_defaults);
+        mNearbyDistance = mFirebaseRemoteConfig.getDouble(NEARBY_DISTANCE_CONFIG_KEY);
+        fetchRemoteConfigValues();
     }
 
     @Override
@@ -147,9 +166,8 @@ public class ExploreFragment extends Fragment {
     }
 
     private void getNearbyPeople(GeoLocation currentLocation) {
-        double radium_km = 0.1;
         if(mCurrentLocation == null) {
-            mNearbyPeopleGeoQuery = mNearbyPeopleGeoRef.queryAtLocation(currentLocation, radium_km);
+            mNearbyPeopleGeoQuery = mNearbyPeopleGeoRef.queryAtLocation(currentLocation, mNearbyDistance);
         } else {
             mNearbyPeopleGeoQuery.setCenter(currentLocation);
             mCurrentLocation = currentLocation;
@@ -258,5 +276,30 @@ public class ExploreFragment extends Fragment {
             mPastLocationDbRef.removeEventListener(mPastPeopleEventListener);
             mPastPeopleEventListener = null;
         }
+    }
+
+    private void fetchRemoteConfigValues() {
+        long cacheExpiration = 3600; // 1 hour in seconds.
+        if (mFirebaseRemoteConfig.getInfo().getConfigSettings().isDeveloperModeEnabled()) {
+            cacheExpiration = 0;
+        }
+
+        // cacheExpirationSeconds is set to cacheExpiration here, indicating that any previously
+        // fetched and cached config would be considered expired because it would have been fetched
+        // more than cacheExpiration seconds ago. Thus the next fetch would go to the server unless
+        // throttling is in progress. The default expiration duration is 43200 (12 hours).
+        mFirebaseRemoteConfig.fetch(cacheExpiration)
+                .addOnCompleteListener(this.getActivity(), new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        if (task.isSuccessful()) {
+                            Log.d(TAG, "Remote Config Fetch Succeeded");
+                            mFirebaseRemoteConfig.activateFetched();
+                        } else {
+                            Log.d(TAG, "Remote Config Fetch Failed");
+                        }
+                        mNearbyDistance = mFirebaseRemoteConfig.getDouble(NEARBY_DISTANCE_CONFIG_KEY);
+                    }
+                });
     }
 }

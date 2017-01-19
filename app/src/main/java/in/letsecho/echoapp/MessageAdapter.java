@@ -48,6 +48,7 @@ public class MessageAdapter extends ArrayAdapter<ChatMessage> {
         authorTextView.setVisibility(View.VISIBLE);
         authorTextView.setText(message.getName());
 
+        // For text alignment of sender and other people
         if(message.getSenderUid()!=null && message.getSenderUid().equals(userId)) {
             messageTextView.setGravity(Gravity.END);
             authorTextView.setGravity(Gravity.END);
