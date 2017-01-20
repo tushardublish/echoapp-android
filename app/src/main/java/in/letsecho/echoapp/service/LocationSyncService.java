@@ -21,16 +21,21 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ServerValue;
+import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import in.letsecho.echoapp.R;
+
 public class LocationSyncService extends JobService implements
         GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener{
-    private static String TAG = "LocationSyncService";
-    public static final long UPDATE_INTERVAL_IN_MILLISECONDS = 5*1000;
-    public static final long FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS = UPDATE_INTERVAL_IN_MILLISECONDS / 2;
-    public static Boolean mRequestingLocationUpdates = false;
+    protected static String TAG = "LocationSyncService";
+    protected static final long UPDATE_INTERVAL_IN_MILLISECONDS = 5*1000;
+    protected static final long FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS = UPDATE_INTERVAL_IN_MILLISECONDS / 2;
+    protected static Boolean mRequestingLocationUpdates = false;
+    private static final String NEARBY_DISTANCE_CONFIG_KEY = "nearby_distance";
+    protected double mNearbyDistance;
 
     protected String mLastUpdateTime, userId;
     protected GoogleApiClient mGoogleApiClient;
@@ -41,6 +46,7 @@ public class LocationSyncService extends JobService implements
     protected GeoFire mNearbyPeopleGeoRef;
     protected GeoQuery mNearbyPeopleGeoQuery;
     protected GeoQueryEventListener mNearbyPeopleEventListener;
+    protected FirebaseRemoteConfig mFirebaseRemoteConfig;
 
     @Override
     public boolean onStartJob(JobParameters job) {
@@ -48,6 +54,10 @@ public class LocationSyncService extends JobService implements
         mCurrentLocationDbRef = mFirebaseDatabase.getReference("locations/current");
         mPastLocationDbRef = mFirebaseDatabase.getReference("locations/past");
         mNearbyPeopleGeoRef = new GeoFire(mCurrentLocationDbRef);
+        //Setting Remote Config
+        mFirebaseRemoteConfig = FirebaseRemoteConfig.getInstance();
+        mFirebaseRemoteConfig.setDefaults(R.xml.remote_config_defaults);
+        mNearbyDistance = mFirebaseRemoteConfig.getDouble(NEARBY_DISTANCE_CONFIG_KEY);
 
         Bundle userBundle = job.getExtras();
         userId = userBundle.get("userId").toString();
@@ -101,9 +111,8 @@ public class LocationSyncService extends JobService implements
     Currently GeoFire was not compatible with Google Apps Engine.
      */
     private void saveNearbyPeople(GeoLocation currentLocation) {
-        double radium_km = 0.1;
         final ArrayList<String> nearbyList = new ArrayList<>();
-        mNearbyPeopleGeoQuery = mNearbyPeopleGeoRef.queryAtLocation(currentLocation, radium_km);
+        mNearbyPeopleGeoQuery = mNearbyPeopleGeoRef.queryAtLocation(currentLocation, mNearbyDistance);
         mNearbyPeopleEventListener = new GeoQueryEventListener() {
             @Override
             public void onKeyEntered(String key, GeoLocation location) {
