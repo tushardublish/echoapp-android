@@ -66,7 +66,7 @@ public class ExploreFragment extends Fragment {
         // Initialize references to views
         mCurrentPeopleListView = (ListView) view.findViewById(R.id.currentPeopleListView);
         View currentPeopleHeader = inflater.inflate(R.layout.header_current_people, null);
-        mCurrentPeopleListView.addHeaderView(currentPeopleHeader);
+        mCurrentPeopleListView.addHeaderView(currentPeopleHeader, null, false);
         mCurrentPeopleListView.setAdapter(mCurrentPeopleAdapter);
         mCurrentPeopleListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -80,7 +80,7 @@ public class ExploreFragment extends Fragment {
 
         mPastPeopleListView = (ListView) view.findViewById(R.id.pastPeopleListView);
         View pastPeopleHeader = inflater.inflate(R.layout.header_past_people, null);
-        mPastPeopleListView.addHeaderView(pastPeopleHeader);
+        mPastPeopleListView.addHeaderView(pastPeopleHeader, null, false);
         mPastPeopleListView.setAdapter(mPastPeopleAdapter);
         mPastPeopleListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
