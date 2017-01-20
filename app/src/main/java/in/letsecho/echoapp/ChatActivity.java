@@ -158,10 +158,12 @@ public class ChatActivity extends AppCompatActivity {
 
         // Initialize Intent
         Intent intent = getIntent();
-        if (intent != null && intent.hasExtra("CHAT_USER"))
-        {
+        if (intent != null && intent.hasExtra("CHAT_USER")) {
             mSecondaryUid = intent.getStringExtra("CHAT_USER");
             mSecondaryUserDbRef = mFirebaseDatabase.getReference().child("users").child(mSecondaryUid);
+        } else {
+            Intent mainIntent = new Intent(this.getApplicationContext(), MainActivity.class);
+            startActivity(intent);
         }
     }
 
@@ -329,7 +331,7 @@ public class ChatActivity extends AppCompatActivity {
             mSecondaryUserEventListener = null;
         }
 
-        if(mCurrentChatDbRef != null) {
+        if(mCurrentUserChatsEventListener != null) {
             mCurrentChatDbRef.removeEventListener(mCurrentUserChatsEventListener);
             mCurrentUserChatsEventListener = null;
         }

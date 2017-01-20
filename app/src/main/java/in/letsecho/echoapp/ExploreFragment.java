@@ -68,8 +68,6 @@ public class ExploreFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_explore, container, false);
         // Initialize references to views
         mPeopleListView = (ExpandableListView) view.findViewById(R.id.peopleListView);
-//        View currentPeopleHeader = inflater.inflate(R.layout.list_header_explore, null);
-//        mCurrentPeopleListView.addHeaderView(currentPeopleHeader, null, false);
         mPeopleListView.setAdapter(mPeopleAdapter);
         mPeopleListView.setOnChildClickListener(new ExpandableListView.OnChildClickListener() {
             @Override
@@ -105,6 +103,16 @@ public class ExploreFragment extends Fragment {
         mNearbyPeopleGeoRef = new GeoFire(mLocationsDbRef);
 
         // Initialize person ListView and its adapter
+        setupExpandableList();
+
+        //Setting Remote Config
+        mFirebaseRemoteConfig = FirebaseRemoteConfig.getInstance();
+        mFirebaseRemoteConfig.setDefaults(R.xml.remote_config_defaults);
+        mNearbyDistance = mFirebaseRemoteConfig.getDouble(NEARBY_DISTANCE_CONFIG_KEY);
+        fetchRemoteConfigValues();
+    }
+
+    private void setupExpandableList() {
         mCurrentPeople = new ArrayList<>();
         mPastPeople = new ArrayList<>();
         mSectionHeaders = new ArrayList<>();
@@ -114,12 +122,6 @@ public class ExploreFragment extends Fragment {
         mExpandableList.put(HEADER1, mCurrentPeople);
         mExpandableList.put(HEADER2, mPastPeople);
         mPeopleAdapter = new PersonAdapterExpandableList(this.getContext(), mSectionHeaders, mExpandableList);
-
-        //Setting Remote Config
-        mFirebaseRemoteConfig = FirebaseRemoteConfig.getInstance();
-        mFirebaseRemoteConfig.setDefaults(R.xml.remote_config_defaults);
-        mNearbyDistance = mFirebaseRemoteConfig.getDouble(NEARBY_DISTANCE_CONFIG_KEY);
-        fetchRemoteConfigValues();
     }
 
     @Override
@@ -215,6 +217,8 @@ public class ExploreFragment extends Fragment {
             mPastLocationDbRef.addListenerForSingleValueEvent(mPastPeopleEventListener);
         }
     }
+
+
 
     private void addUserToCurrentList(String secondaryUserId) {
         DatabaseReference userDbRef = mUsersDbRef.child(secondaryUserId);
