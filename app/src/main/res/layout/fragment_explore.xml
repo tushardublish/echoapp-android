@@ -13,18 +13,11 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="in.letsecho.echoapp.ExploreFragment">
 
-    <ListView
-        android:id="@+id/currentPeopleListView"
+    <ExpandableListView
+        android:id="@+id/peopleListView"
         android:layout_width="match_parent"
         tools:listitem="@layout/item_person"
         android:layout_height="wrap_content" />
-
-    <ListView
-        android:id="@+id/pastPeopleListView"
-        android:layout_width="match_parent"
-        tools:listitem="@layout/item_person"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="25dp" />
 
     <ProgressBar
         android:id="@+id/progressBar"

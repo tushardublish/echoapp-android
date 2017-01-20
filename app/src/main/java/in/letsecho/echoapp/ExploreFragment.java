@@ -8,8 +8,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.ListView;
+import android.widget.ExpandableListView;
 import android.widget.ProgressBar;
 
 import com.firebase.geofire.GeoFire;
@@ -28,9 +27,9 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
-import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import in.letsecho.echoapp.library.UserDisplayModel;
@@ -38,12 +37,16 @@ import in.letsecho.echoapp.library.UserProfile;
 
 public class ExploreFragment extends Fragment {
     private static String TAG = "ExploreFragment";
+    private static String HEADER1 = "Nearby People";
+    private static String HEADER2 = "People near you in last 24 hours";
     private static final String NEARBY_DISTANCE_CONFIG_KEY = "nearby_distance";
     private static long HOURS_TO_MILLI_SECS = 60*60*1000;
-    private ListView mCurrentPeopleListView, mPastPeopleListView;
-    private PersonAdapter mCurrentPeopleAdapter, mPastPeopleAdapter;
+    private ExpandableListView mPeopleListView;
+    private PersonAdapterExpandableList mPeopleAdapter;
     private ProgressBar mProgressBar;
+    private List<String> mSectionHeaders;
     private List<UserDisplayModel> mCurrentPeople, mPastPeople;
+    private HashMap<String, List<UserDisplayModel>> mExpandableList;
     private double mNearbyDistance; //(Km)
 
     private FirebaseDatabase mFirebaseDatabase;
@@ -64,37 +67,29 @@ public class ExploreFragment extends Fragment {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_explore, container, false);
         // Initialize references to views
-        mCurrentPeopleListView = (ListView) view.findViewById(R.id.currentPeopleListView);
-        View currentPeopleHeader = inflater.inflate(R.layout.header_current_people, null);
-        mCurrentPeopleListView.addHeaderView(currentPeopleHeader, null, false);
-        mCurrentPeopleListView.setAdapter(mCurrentPeopleAdapter);
-        mCurrentPeopleListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        mPeopleListView = (ExpandableListView) view.findViewById(R.id.peopleListView);
+//        View currentPeopleHeader = inflater.inflate(R.layout.list_header_explore, null);
+//        mCurrentPeopleListView.addHeaderView(currentPeopleHeader, null, false);
+        mPeopleListView.setAdapter(mPeopleAdapter);
+        mPeopleListView.setOnChildClickListener(new ExpandableListView.OnChildClickListener() {
             @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                UserProfile person = mCurrentPeopleAdapter.getItem(position-1);
+            public boolean onChildClick(ExpandableListView parent, View view, int groupPosition,
+                                     int childPosition, long id) {
+                UserProfile person = null;
+                if(groupPosition == 0)
+                    person = mCurrentPeople.get(childPosition);
+                else if(groupPosition == 1)
+                    person = mPastPeople.get(childPosition);
                 Intent intent = new Intent(getActivity().getApplicationContext(), ChatActivity.class)
                         .putExtra("CHAT_USER", person.getUID());
                 startActivity(intent);
+                return true;
             }
         });
 
-        mPastPeopleListView = (ListView) view.findViewById(R.id.pastPeopleListView);
-        View pastPeopleHeader = inflater.inflate(R.layout.header_past_people, null);
-        mPastPeopleListView.addHeaderView(pastPeopleHeader, null, false);
-        mPastPeopleListView.setAdapter(mPastPeopleAdapter);
-        mPastPeopleListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                UserProfile person = mPastPeopleAdapter.getItem(position-1);
-                Intent intent = new Intent(getActivity().getApplicationContext(), ChatActivity.class)
-                        .putExtra("CHAT_USER", person.getUID());
-                startActivity(intent);
-            }
-        });
         // Initialize progress bar
         mProgressBar = (ProgressBar) view.findViewById(R.id.progressBar);
         mProgressBar.setVisibility(ProgressBar.INVISIBLE);
-
         return view;
     }
 
@@ -111,9 +106,14 @@ public class ExploreFragment extends Fragment {
 
         // Initialize person ListView and its adapter
         mCurrentPeople = new ArrayList<>();
-        mCurrentPeopleAdapter = new PersonAdapter(this.getContext(), R.layout.item_person, mCurrentPeople);
         mPastPeople = new ArrayList<>();
-        mPastPeopleAdapter = new PersonAdapter(this.getContext(), R.layout.item_person, mPastPeople);
+        mSectionHeaders = new ArrayList<>();
+        mSectionHeaders.add(HEADER1);
+        mSectionHeaders.add(HEADER2);
+        mExpandableList = new HashMap<>();
+        mExpandableList.put(HEADER1, mCurrentPeople);
+        mExpandableList.put(HEADER2, mPastPeople);
+        mPeopleAdapter = new PersonAdapterExpandableList(this.getContext(), mSectionHeaders, mExpandableList);
 
         //Setting Remote Config
         mFirebaseRemoteConfig = FirebaseRemoteConfig.getInstance();
@@ -134,8 +134,9 @@ public class ExploreFragment extends Fragment {
     @Override
     public void onPause() {
         super.onPause();
-        mCurrentPeopleAdapter.clear();
-        mPastPeopleAdapter.clear();
+        mCurrentPeople.clear();
+        mPastPeople.clear();
+        mPeopleAdapter.notifyDataSetChanged();
         detachDatabaseReadListener();
     }
 
@@ -221,7 +222,8 @@ public class ExploreFragment extends Fragment {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 UserDisplayModel secondaryUser = dataSnapshot.getValue(UserDisplayModel.class);
-                mCurrentPeopleAdapter.add(secondaryUser);
+                mCurrentPeople.add(secondaryUser);
+                mPeopleAdapter.notifyDataSetChanged();
             }
             @Override
             public void onCancelled(DatabaseError databaseError) {}
@@ -239,7 +241,8 @@ public class ExploreFragment extends Fragment {
                     secondaryUser.setRightAlignedInfo(hourDiff.toString() + " hour");
                 else if (hourDiff > 1)
                     secondaryUser.setRightAlignedInfo(hourDiff.toString() + " hours");
-                mPastPeopleAdapter.add(secondaryUser);
+                mPastPeople.add(secondaryUser);
+                mPeopleAdapter.notifyDataSetChanged();
             }
             @Override
             public void onCancelled(DatabaseError databaseError) {}
@@ -249,7 +252,8 @@ public class ExploreFragment extends Fragment {
     private void removeUserFromCurrentList(String secondaryUserId) {
         int index = UserDisplayModel.findProfileOnUid(mCurrentPeople, secondaryUserId);
         UserDisplayModel removedPerson = mCurrentPeople.get(index);
-        mCurrentPeopleAdapter.remove(removedPerson);
+        mPastPeople.remove(removedPerson);
+        mPeopleAdapter.notifyDataSetChanged();
     }
 
     private void detachDatabaseReadListener() {
