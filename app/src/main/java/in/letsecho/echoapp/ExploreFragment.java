@@ -1,9 +1,9 @@
 package in.letsecho.echoapp;
 
-import android.content.Intent;
+import android.app.DialogFragment;
+import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -78,9 +78,15 @@ public class ExploreFragment extends Fragment {
                     person = mCurrentPeople.get(childPosition);
                 else if(groupPosition == 1)
                     person = mPastPeople.get(childPosition);
-                Intent intent = new Intent(getActivity().getApplicationContext(), ChatActivity.class)
-                        .putExtra("CHAT_USER", person.getUID());
-                startActivity(intent);
+                // Start chat
+//                Intent intent = new Intent(getActivity().getApplicationContext(), ChatActivity.class)
+//                        .putExtra("CHAT_USER", person.getUID());
+//                startActivity(intent);
+                DialogFragment profileDialog = new ProfileFragment();
+                Bundle bundle = new Bundle();
+                bundle.putString("secondaryUserId", person.getUID());
+                profileDialog.setArguments(bundle);
+                profileDialog.show(getActivity().getFragmentManager(), "profile");
                 return true;
             }
         });
@@ -261,10 +267,6 @@ public class ExploreFragment extends Fragment {
     }
 
     private void detachDatabaseReadListener() {
-        if (mUserProfileEventListener != null) {
-            mUsersDbRef.removeEventListener(mUserProfileEventListener);
-            mUserProfileEventListener = null;
-        }
 
         if(mCurrentLocationEventListener != null) {
             mCurrentLocationDbRef.removeEventListener(mCurrentLocationEventListener);

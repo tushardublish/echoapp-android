@@ -16,6 +16,7 @@
 package in.letsecho.echoapp.library;
 
 import android.os.Bundle;
+import android.util.Log;
 
 import com.facebook.AccessToken;
 import com.facebook.GraphRequest;
@@ -23,10 +24,16 @@ import com.facebook.GraphResponse;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.UserInfo;
+import com.google.firebase.database.DatabaseReference;
 
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 //Putting libraries which use FirebaseUser module in echoapp module.
 // Because the java admin sdk do not support FirebaseUser module currently (11th Jan 2017)
@@ -87,20 +94,31 @@ public class UserProfile {
 
     public void setInstanceId(String instanceId) { this. instanceId = instanceId; }
 
-//    private void fetchFbData(FirebaseUser user) {
-//        accessToken =
-//        GraphRequest request = GraphRequest.newMeRequest(
-//                accessToken,
-//                new GraphRequest.GraphJSONObjectCallback() {
-//                    @Override
-//                    public void onCompleted(JSONObject object, GraphResponse response) {
-//                        // Insert your code here
-//                    }
-//                });
-//
-//        Bundle parameters = new Bundle();
-//        parameters.putString("fields", "work");
-//        request.setParameters(parameters);
-//        request.executeAsync();
-//    }
+    public void saveFbData(final DatabaseReference usersDbRef) {
+        if(AccessToken.getCurrentAccessToken() != null) {
+            Log.d("USERPROFILE", AccessToken.getCurrentAccessToken().getToken());
+            GraphRequest request = GraphRequest.newMeRequest(
+                    AccessToken.getCurrentAccessToken(),
+                    new GraphRequest.GraphJSONObjectCallback() {
+                        @Override
+                        public void onCompleted(JSONObject object, GraphResponse response) {
+                            // Application code
+                            try {
+                                Map map = JsonToMap.convert(object);
+//                                for(Map work: (ArrayList<Map>)map.get("work")) {}
+                                usersDbRef.child(uid).child("fbdata").updateChildren(map);
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    });
+            Bundle parameters = new Bundle();
+            parameters.putString("fields", "id, work, education");
+            request.setParameters(parameters);
+            request.executeAsync();
+        }
+        else {
+            Log.d("USERPROFILE", "Access Token NULL");
+        }
+    }
 }

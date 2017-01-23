@@ -28,6 +28,9 @@ import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.FirebaseInstanceIdService;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import in.letsecho.echoapp.library.UserProfile;
 
 
@@ -71,8 +74,9 @@ public class MyFirebaseInstanceIDService extends FirebaseInstanceIdService {
             public void onDataChange(DataSnapshot dataSnapshot) {
                 UserProfile user = dataSnapshot.getValue(UserProfile.class);
                 if (user.getInstanceId() != token) {
-                    user.setInstanceId(token);
-                    userDbRef.setValue(user);
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("instanceId", token);
+                    userDbRef.updateChildren(map);
                 }
             }
             @Override

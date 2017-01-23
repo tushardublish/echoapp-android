@@ -16,6 +16,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.widget.Toast;
 
+import com.facebook.FacebookSdk;
 import com.firebase.jobdispatcher.FirebaseJobDispatcher;
 import com.firebase.jobdispatcher.GooglePlayDriver;
 import com.firebase.jobdispatcher.Job;
@@ -28,6 +29,10 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.iid.FirebaseInstanceId;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 import in.letsecho.echoapp.service.LocationSyncService;
 import in.letsecho.echoapp.library.UserProfile;
@@ -120,6 +125,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private FirebaseAuth.AuthStateListener getAuthStateListener() {
+        final AuthUI.IdpConfig facebookIdp = new AuthUI.IdpConfig.Builder(AuthUI.FACEBOOK_PROVIDER)
+                .setPermissions(Arrays.asList("user_education_history", "user_work_history"))
+                .build();
         FirebaseAuth.AuthStateListener authStateListener = new FirebaseAuth.AuthStateListener() {
             @Override
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
@@ -133,9 +141,7 @@ public class MainActivity extends AppCompatActivity {
                             AuthUI.getInstance()
                                     .createSignInIntentBuilder()
                                     .setIsSmartLockEnabled(false)
-                                    .setProviders(
-//                                            AuthUI.GOOGLE_PROVIDER,
-                                            AuthUI.FACEBOOK_PROVIDER)
+                                    .setProviders(Arrays.asList(facebookIdp))
                                     .build(),
                             RC_SIGN_IN);
                 }
@@ -153,9 +159,10 @@ public class MainActivity extends AppCompatActivity {
                 // Saving user info in DB. To do: Should not happen on every sign in
                 mCurrentUser = mFirebaseAuth.getCurrentUser();
                 UserProfile userProfile = new UserProfile(mCurrentUser);
-                mUsersDbRef.child(mCurrentUser.getUid()).setValue(userProfile);
+                Map<String, Object> userMap = new HashMap<>();
+                userMap.put(mCurrentUser.getUid(), userProfile);
+                mUsersDbRef.updateChildren(userMap);
                 Toast.makeText(this, "Signed in!", Toast.LENGTH_SHORT).show();
-
                 InitializeUser();
             } else if (resultCode == RESULT_CANCELED) {
                 // Sign in was canceled by the user, finish the activity
@@ -166,6 +173,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void InitializeUser() {
+        FacebookSdk.sdkInitialize(this);
+        UserProfile userProfile = new UserProfile(mCurrentUser);
+        userProfile.saveFbData(mUsersDbRef);
+
         InitiateLocationSyncJob();
         //To update Insatance id for users. Can be removed after 1st Feb 2017.
         MyFirebaseInstanceIDService firebaseInstance = new MyFirebaseInstanceIDService();
@@ -199,7 +210,7 @@ public class MainActivity extends AppCompatActivity {
                     // persist job forever
                     .setLifetime(Lifetime.FOREVER)
                     // start between 0 and 5*60 seconds from now
-                    .setTrigger(Trigger.executionWindow(0, 60))
+                    .setTrigger(Trigger.executionWindow(0, 5*60))
                     // don't overwrite an existing job with the same tag
                     .setReplaceCurrent(false)
                     // retry with exponential backoff
