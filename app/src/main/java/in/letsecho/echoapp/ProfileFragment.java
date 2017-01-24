@@ -26,6 +26,7 @@ import com.google.firebase.database.ValueEventListener;
 import java.util.ArrayList;
 
 import in.letsecho.echoapp.adapter.WorkAdapter;
+import in.letsecho.echoapp.library.FbEducation;
 import in.letsecho.echoapp.library.FbWork;
 import in.letsecho.echoapp.library.UserProfile;
 
@@ -33,15 +34,13 @@ public class ProfileFragment extends DialogFragment {
 
     private FirebaseDatabase mFirebaseDatabase;
     private DatabaseReference mUserProfileDbRef;
-    private String mUserId;
     private View mView;
     private ImageView mPhotoImageView;
-    private TextView mNameTextView, mWorkTextView;
+    private TextView mNameTextView, mWorkTextView, mEduTextView;
     private Button mConnectButton;
     private ImageButton mFbButton;
-//    private ListView mWorkListView;
-//    private ArrayList<FbWork> workList;
-//    private WorkAdapter mWorkAdapter;
+    private String mUserId;
+    private int max_image_size;
 
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
@@ -49,10 +48,12 @@ public class ProfileFragment extends DialogFragment {
         LayoutInflater inflater = this.getActivity().getLayoutInflater();
         mView = inflater.inflate(R.layout.fragment_profile, null);
         builder.setView(mView);
+
         // Get mView items
         mPhotoImageView = (ImageView) mView.findViewById(R.id.displayImageView);
         mNameTextView = (TextView) mView.findViewById(R.id.nameTextView);
         mWorkTextView = (TextView) mView.findViewById(R.id.workTextView);
+        mEduTextView = (TextView) mView.findViewById(R.id.eduTextView);
         mConnectButton = (Button) mView.findViewById(R.id.connectButton);
         mConnectButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -63,10 +64,6 @@ public class ProfileFragment extends DialogFragment {
             }
         });
         mFbButton = (ImageButton) mView.findViewById(R.id.fbButton);
-//        mWorkListView = (ListView) mView.findViewById(R.id.workListView);
-//        workList = new ArrayList<>();
-//        mWorkAdapter = new WorkAdapter(this.getActivity(), R.layout.item_work, workList);
-//        mWorkListView.setAdapter(mWorkAdapter);
         return builder.create();
     }
 
@@ -82,17 +79,37 @@ public class ProfileFragment extends DialogFragment {
             @Override
             public void onDataChange(DataSnapshot userObj) {
                 UserProfile user = userObj.getValue(UserProfile.class);
+                // Set Photo
                 if (user.getPhotoUrl() != null) {
                     Glide.with(mPhotoImageView.getContext())
                             .load(user.getPhotoUrl())
                             .into(mPhotoImageView);
                 }
+                max_image_size = mView.getWidth();
+                mPhotoImageView.setMaxWidth(max_image_size);
+                mPhotoImageView.setMaxHeight(max_image_size);
+                //Set Name
                 mNameTextView.setText(user.getName());
+                // Set Work
                 for(DataSnapshot workObj: userObj.child("fbdata/work").getChildren()) {
                     FbWork work = workObj.getValue(FbWork.class);
                     mWorkTextView.setText(work.getPosition() + " at " + work.getEmployer());
                     break;
                 }
+                //Set Education
+                FbEducation finalEdu = null;
+                for(DataSnapshot eduObj: userObj.child("fbdata/education").getChildren()) {
+                    FbEducation edu = eduObj.getValue(FbEducation.class);
+                    if(finalEdu == null)
+                        finalEdu = edu;
+                    if(edu.getYear() != null && finalEdu.getYear() != null &&
+                            Integer.parseInt(edu.getYear()) > Integer.parseInt(finalEdu.getYear())) {
+                        finalEdu = edu;
+                    }
+                }
+                if(finalEdu != null)
+                    mEduTextView.setText(finalEdu.getSchool());
+                // Set Fb link
                 final String fbProfileId = userObj.child("fbdata/id").getValue(String.class);
                 if(fbProfileId != null)
                 mFbButton.setOnClickListener(new View.OnClickListener() {
@@ -114,13 +131,14 @@ public class ProfileFragment extends DialogFragment {
     }
 
     public static Intent getOpenFacebookIntent(Context context, String profile_id) {
+        String facebookUrl = "https://www.facebook.com/" + profile_id;
         try{
             // open in Facebook app
             context.getPackageManager().getPackageInfo("com.facebook.katana", 0);
-            return new Intent(Intent.ACTION_VIEW, Uri.parse("fb://page/" + profile_id));
+            return new Intent(Intent.ACTION_VIEW, Uri.parse("fb://facewebmodal/f?href=" + facebookUrl));
         } catch (Exception e) {
             // open in browser
-            return new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.facebook.com/" + profile_id));
+            return new Intent(Intent.ACTION_VIEW, Uri.parse(facebookUrl));
         }
     }
 }

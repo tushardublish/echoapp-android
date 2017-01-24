@@ -110,19 +110,22 @@ public class UserProfile {
                                 newMap.put("id", map.get("id"));
                                 //Work
                                 List<FbWork> newWorkList = new ArrayList<>();
-                                for(Map workObj: (ArrayList<Map>)map.get("work")) {
-                                    FbWork work = new FbWork(workObj);
-                                    newWorkList.add(work);
+                                if(map.containsKey("work")) {
+                                    for (Map workObj : (ArrayList<Map>) map.get("work")) {
+                                        FbWork work = new FbWork(workObj);
+                                        newWorkList.add(work);
+                                    }
+                                    newMap.put("work", newWorkList);
                                 }
-                                newMap.put("work",newWorkList);
                                 //Education
                                 List<FbEducation> newEduList = new ArrayList<>();
-                                for(Map eduObj: (ArrayList<Map>)map.get("education")) {
-                                    FbEducation edu = new FbEducation(eduObj);
-                                    newEduList.add(edu);
+                                if(map.containsKey("education")) {
+                                    for (Map eduObj : (ArrayList<Map>) map.get("education")) {
+                                        FbEducation edu = new FbEducation(eduObj);
+                                        newEduList.add(edu);
+                                    }
+                                    newMap.put("education", newEduList);
                                 }
-                                newMap.put("education",newEduList);
-
                                 usersDbRef.child(uid).child("fbdata").updateChildren(newMap);
                             } catch (JSONException e) {
                                 e.printStackTrace();

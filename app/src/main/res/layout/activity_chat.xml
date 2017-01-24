@@ -16,6 +16,7 @@
         android:minHeight="?attr/actionBarSize"
         android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
         app:popupTheme="@style/ThemeOverlay.AppCompat.Light"/>
+    <!--AppCompat.Light causes the menu options to not execute. Also call setSupportActionBar from activity-->
 
     <ListView
         android:id="@+id/messageListView"
