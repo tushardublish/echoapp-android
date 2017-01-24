@@ -1,5 +1,6 @@
 package in.letsecho.echoapp;
 
+
 import android.app.DialogFragment;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
@@ -182,8 +183,8 @@ public class ExploreFragment extends Fragment {
                 @Override
                 public void onKeyEntered(String key, GeoLocation location) {
                     //Tudu: Should add new user at position based on the distance
-                    if(!key.equals(mCurrentUser.getUid()))
-                        addUserToCurrentList(key);
+//                    if(!key.equals(mCurrentUser.getUid()))
+                    addUserToCurrentList(key);
                 }
                 @Override
                 public void onKeyExited(String key) {

@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 //Putting libraries which use FirebaseUser module in echoapp module.
 // Because the java admin sdk do not support FirebaseUser module currently (11th Jan 2017)
@@ -104,9 +105,25 @@ public class UserProfile {
                         public void onCompleted(JSONObject object, GraphResponse response) {
                             // Application code
                             try {
+                                Map newMap = new HashMap();
                                 Map map = JsonToMap.convert(object);
-//                                for(Map work: (ArrayList<Map>)map.get("work")) {}
-                                usersDbRef.child(uid).child("fbdata").updateChildren(map);
+                                newMap.put("id", map.get("id"));
+                                //Work
+                                List<FbWork> newWorkList = new ArrayList<>();
+                                for(Map workObj: (ArrayList<Map>)map.get("work")) {
+                                    FbWork work = new FbWork(workObj);
+                                    newWorkList.add(work);
+                                }
+                                newMap.put("work",newWorkList);
+                                //Education
+                                List<FbEducation> newEduList = new ArrayList<>();
+                                for(Map eduObj: (ArrayList<Map>)map.get("education")) {
+                                    FbEducation edu = new FbEducation(eduObj);
+                                    newEduList.add(edu);
+                                }
+                                newMap.put("education",newEduList);
+
+                                usersDbRef.child(uid).child("fbdata").updateChildren(newMap);
                             } catch (JSONException e) {
                                 e.printStackTrace();
                             }
