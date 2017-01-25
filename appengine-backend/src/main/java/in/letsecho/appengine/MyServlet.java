@@ -14,6 +14,7 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Logger;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.internal.Log;
 
@@ -56,6 +57,7 @@ public class MyServlet extends HttpServlet {
                 .build();
         FirebaseApp.initializeApp(options);
         FirebaseDatabase firebaseDb = FirebaseDatabase.getInstance();
+        firebaseDb.setLogLevel(Logger.Level.DEBUG);
         rootDbRef = firebaseDb.getReference();
         chatUsers = getUsersFromChat();
         userInstances = getUserInstances();
@@ -83,7 +85,9 @@ public class MyServlet extends HttpServlet {
                 @Override
                 public void onChildMoved(DataSnapshot dataSnapshot, String s) {}
                 @Override
-                public void onCancelled(DatabaseError databaseError) {}
+                public void onCancelled(DatabaseError databaseError) {
+                    System.out.println("Chat listener failed to read: " + databaseError.getCode());
+                }
             };
             chatDbRef.addChildEventListener(chatEventListener);
         }
@@ -111,12 +115,15 @@ public class MyServlet extends HttpServlet {
                     //Update Status
                     chatMessage.setNotified(Boolean.TRUE);
                     chatDbRef.child(chatId).child(messageKey).setValue(chatMessage);
+                    System.out.println("Message Sender: " + chatMessage.getName() + ", Message: " + chatMessage.getText());
                 }
             }
             public void onChildChanged(DataSnapshot dataSnapshot, String s) {}
             public void onChildRemoved(DataSnapshot dataSnapshot) {}
             public void onChildMoved(DataSnapshot dataSnapshot, String s) {}
-            public void onCancelled(DatabaseError databaseError) {}
+            public void onCancelled(DatabaseError databaseError) {
+                System.out.println("Message listener failed to read: " + databaseError.getCode());
+            }
         };
         return messageEventListener;
     }

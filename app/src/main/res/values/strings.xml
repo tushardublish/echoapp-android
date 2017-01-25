@@ -7,4 +7,5 @@
     <string name="facebook_login_protocol_scheme" translatable="false">fb1282394848490709</string>
     <string name="title_activity_main">MainActivity</string>
     <string name="connect_button">Connect</string>
+    <string name="title_activity_create_group">CreateGroupActivity</string>
 </resources>

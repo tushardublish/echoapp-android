@@ -275,7 +275,8 @@ public class ExploreFragment extends Fragment {
         }
 
         if(mNearbyPeopleEventListener != null) {
-            mNearbyPeopleGeoQuery.removeGeoQueryEventListener(mNearbyPeopleEventListener);
+            mNearbyPeopleGeoQuery.removeAllListeners();
+//            mNearbyPeopleGeoQuery.removeGeoQueryEventListener(mNearbyPeopleEventListener);
             mNearbyPeopleEventListener = null;
         }
 

@@ -120,6 +120,9 @@ public class MainActivity extends AppCompatActivity {
                 mCurrentUser = null;
                 AuthUI.getInstance().signOut(this);
                 return true;
+            case R.id.new_group:
+                Intent intent = new Intent(this.getApplicationContext(), CreateGroupActivity.class);
+                startActivity(intent);
             default:
                 return super.onOptionsItemSelected(item);
         }

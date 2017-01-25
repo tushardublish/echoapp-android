@@ -322,7 +322,7 @@ public class ChatActivity extends AppCompatActivity {
 
     private void detachDatabaseReadListener() {
         if (mMessageEventListener != null) {
-            mChatsDbRef.removeEventListener(mMessageEventListener);
+            mCurrentChatDbRef.removeEventListener(mMessageEventListener);
             mMessageEventListener = null;
         }
 
@@ -332,9 +332,10 @@ public class ChatActivity extends AppCompatActivity {
         }
 
         if(mCurrentUserChatsEventListener != null) {
-            mCurrentChatDbRef.removeEventListener(mCurrentUserChatsEventListener);
+            mCurrentUserChatQuery.removeEventListener(mCurrentUserChatsEventListener);
             mCurrentUserChatsEventListener = null;
         }
+
     }
 
     @Override
