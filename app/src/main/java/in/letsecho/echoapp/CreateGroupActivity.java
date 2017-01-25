@@ -69,8 +69,9 @@ public class CreateGroupActivity extends AppCompatActivity {
                 String ownerName = mCurrentUser.getDisplayName();
                 Group newGroup = new Group(title, description, ownerId, ownerName);
                 DatabaseReference groupDbRef = mRootDbRef.child("groups").push();
-                groupDbRef.setValue(newGroup);
                 String groupId = groupDbRef.getKey();
+                newGroup.setId(groupId);
+                groupDbRef.setValue(newGroup);
                 mGeoFire.setLocation(groupId, mCurrentLocation);
 
                 Toast.makeText(getApplicationContext(), "Group created successfully!", Toast.LENGTH_LONG).show();

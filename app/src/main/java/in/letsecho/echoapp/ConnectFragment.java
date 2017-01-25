@@ -23,7 +23,7 @@ import com.google.firebase.database.ValueEventListener;
 import java.util.ArrayList;
 import java.util.List;
 
-import in.letsecho.echoapp.library.UserDisplayModel;
+import in.letsecho.echoapp.library.EntityDisplayModel;
 import in.letsecho.echoapp.library.UserProfile;
 
 public class ConnectFragment extends Fragment {
@@ -40,7 +40,7 @@ public class ConnectFragment extends Fragment {
     private ArrayList<Query> mChatDbRefs;
     private ChildEventListener mUserChatsEventListener;
     private ArrayList<ValueEventListener> mChatListeners;
-    private List<UserDisplayModel> mPersons;
+    private List<EntityDisplayModel> mPersons;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -52,9 +52,9 @@ public class ConnectFragment extends Fragment {
         mPersonListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                UserProfile person = mPersonAdapter.getItem(position);
+                EntityDisplayModel item = mPersonAdapter.getItem(position);
                 Intent intent = new Intent(getActivity().getApplicationContext(), ChatActivity.class)
-                        .putExtra("CHAT_USER", person.getUID());
+                        .putExtra("CHAT_USER", item.getUid());
                 startActivity(intent);
             }
         });
@@ -128,8 +128,9 @@ public class ConnectFragment extends Fragment {
         userDbRef.addListenerForSingleValueEvent((new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                UserDisplayModel secondaryUser = dataSnapshot.getValue(UserDisplayModel.class);
-                mPersonAdapter.add(secondaryUser);
+                UserProfile secondaryUser = dataSnapshot.getValue(UserProfile.class);
+                EntityDisplayModel displayUser = new EntityDisplayModel(secondaryUser);
+                mPersonAdapter.add(displayUser);
             }
 
             @Override
@@ -145,7 +146,7 @@ public class ConnectFragment extends Fragment {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 Long unreadMessageCount = dataSnapshot.getChildrenCount();
-                int index = UserDisplayModel.findProfileOnUid(mPersons, secondaryUserId);
+                int index = EntityDisplayModel.findProfileOnUid(mPersons, secondaryUserId);
                 if(index >= 0 && unreadMessageCount > 0) {
                     mPersons.get(index).setRightAlignedInfo(unreadMessageCount.toString());
                     mPersonAdapter.notifyDataSetChanged();

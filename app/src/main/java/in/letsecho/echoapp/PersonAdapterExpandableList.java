@@ -14,16 +14,16 @@ import com.bumptech.glide.Glide;
 import java.util.HashMap;
 import java.util.List;
 
-import in.letsecho.echoapp.library.UserDisplayModel;
+import in.letsecho.echoapp.library.EntityDisplayModel;
 
 public class PersonAdapterExpandableList extends BaseExpandableListAdapter{
 
     private Context _context;
     private List<String> _listDataHeader;
-    private HashMap<String, List<UserDisplayModel>> _listDataChild;
+    private HashMap<String, List<EntityDisplayModel>> _listDataChild;
 
     public PersonAdapterExpandableList(Context context, List<String> listDataHeader,
-                                       HashMap<String, List<UserDisplayModel>> listChildData) {
+                                       HashMap<String, List<EntityDisplayModel>> listChildData) {
         this._context = context;
         this._listDataHeader = listDataHeader;
         this._listDataChild = listChildData;
@@ -55,16 +55,16 @@ public class PersonAdapterExpandableList extends BaseExpandableListAdapter{
         TextView rightAlignedInfo = (TextView) convertView.findViewById(R.id.rightNumberTextView);
 
         String sectionHeader = _listDataHeader.get(groupPosition);
-        List<UserDisplayModel> sectionList = _listDataChild.get(sectionHeader);
-        UserDisplayModel person = sectionList.get(childPosition);
-        nameTextView.setText(person.getName());
-        if (person.getPhotoUrl() != null) {
+        List<EntityDisplayModel> sectionList = _listDataChild.get(sectionHeader);
+        EntityDisplayModel entity = sectionList.get(childPosition);
+        nameTextView.setText(entity.getTitle());
+        if (entity.getPhotoUrl() != null) {
             Glide.with(photoImageView.getContext())
-                    .load(person.getPhotoUrl())
+                    .load(entity.getPhotoUrl())
                     .into(photoImageView);
         }
-        if(person.getRightAlignedInfo() != null) {
-            rightAlignedInfo.setText(person.getRightAlignedInfo());
+        if(entity.getRightAlignedInfo() != null) {
+            rightAlignedInfo.setText(entity.getRightAlignedInfo());
             rightAlignedInfo.setVisibility(View.VISIBLE);
         }
         return convertView;

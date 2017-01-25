@@ -33,21 +33,26 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import in.letsecho.echoapp.library.UserDisplayModel;
+import in.letsecho.echoapp.library.Group;
+import in.letsecho.echoapp.library.EntityDisplayModel;
 import in.letsecho.echoapp.library.UserProfile;
+
+import static in.letsecho.echoapp.library.EntityDisplayModel.GROUP_TYPE;
+import static in.letsecho.echoapp.library.EntityDisplayModel.USER_TYPE;
 
 public class ExploreFragment extends Fragment {
     private static String TAG = "ExploreFragment";
-    private static String HEADER1 = "Nearby People";
-    private static String HEADER2 = "People near you in last 24 hours";
+    private static String HEADER1 = "Nearby Groups";
+    private static String HEADER2 = "Nearby People";
+    private static String HEADER3 = "People near you in last 24 hours";
     private static final String NEARBY_DISTANCE_CONFIG_KEY = "nearby_distance";
     private static long HOURS_TO_MILLI_SECS = 60*60*1000;
     private ExpandableListView mPeopleListView;
     private PersonAdapterExpandableList mPeopleAdapter;
     private ProgressBar mProgressBar;
     private List<String> mSectionHeaders;
-    private List<UserDisplayModel> mCurrentPeople, mPastPeople;
-    private HashMap<String, List<UserDisplayModel>> mExpandableList;
+    private List<EntityDisplayModel> mCurrentPeople, mPastPeople, mGroups;
+    private HashMap<String, List<EntityDisplayModel>> mExpandableList;
     private double mNearbyDistance; //(Km)
 
     private FirebaseDatabase mFirebaseDatabase;
@@ -74,18 +79,24 @@ public class ExploreFragment extends Fragment {
             @Override
             public boolean onChildClick(ExpandableListView parent, View view, int groupPosition,
                                      int childPosition, long id) {
-                UserProfile person = null;
-                if(groupPosition == 0)
-                    person = mCurrentPeople.get(childPosition);
-                else if(groupPosition == 1)
-                    person = mPastPeople.get(childPosition);
-                // Start chat
-//                Intent intent = new Intent(getActivity().getApplicationContext(), ChatActivity.class)
-//                        .putExtra("CHAT_USER", person.getUID());
-//                startActivity(intent);
+                EntityDisplayModel profile = null;
+                switch(groupPosition) {
+                    case 0:
+                        profile = mGroups.get(childPosition);
+                    case 1:
+                        profile = mCurrentPeople.get(childPosition);
+                        break;
+                    case 2:
+                        profile = mPastPeople.get(childPosition);
+                        break;
+                }
+                // Open Profile
                 DialogFragment profileDialog = new ProfileFragment();
                 Bundle bundle = new Bundle();
-                bundle.putString("secondaryUserId", person.getUID());
+                if(profile.getType() == USER_TYPE)
+                    bundle.putString("secondaryUserId", profile.getUid());
+                else if(profile.getType() == GROUP_TYPE)
+                    bundle.putString("groupId", profile.getUid());
                 profileDialog.setArguments(bundle);
                 profileDialog.show(getActivity().getFragmentManager(), "profile");
                 return true;
@@ -120,14 +131,17 @@ public class ExploreFragment extends Fragment {
     }
 
     private void setupExpandableList() {
+        mGroups = new ArrayList<>();
         mCurrentPeople = new ArrayList<>();
         mPastPeople = new ArrayList<>();
         mSectionHeaders = new ArrayList<>();
         mSectionHeaders.add(HEADER1);
         mSectionHeaders.add(HEADER2);
+        mSectionHeaders.add(HEADER3);
         mExpandableList = new HashMap<>();
-        mExpandableList.put(HEADER1, mCurrentPeople);
-        mExpandableList.put(HEADER2, mPastPeople);
+        mExpandableList.put(HEADER1, mGroups);
+        mExpandableList.put(HEADER2, mCurrentPeople);
+        mExpandableList.put(HEADER3, mPastPeople);
         mPeopleAdapter = new PersonAdapterExpandableList(this.getContext(), mSectionHeaders, mExpandableList);
     }
 
@@ -232,8 +246,9 @@ public class ExploreFragment extends Fragment {
         userDbRef.addListenerForSingleValueEvent((new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                UserDisplayModel secondaryUser = dataSnapshot.getValue(UserDisplayModel.class);
-                mCurrentPeople.add(secondaryUser);
+                UserProfile secondaryUser = dataSnapshot.getValue(UserProfile.class);
+                EntityDisplayModel displayUser = new EntityDisplayModel(secondaryUser);
+                mCurrentPeople.add(displayUser);
                 mPeopleAdapter.notifyDataSetChanged();
             }
             @Override
@@ -246,13 +261,14 @@ public class ExploreFragment extends Fragment {
         userDbRef.addListenerForSingleValueEvent((new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                UserDisplayModel secondaryUser = dataSnapshot.getValue(UserDisplayModel.class);
+                UserProfile secondaryUser = dataSnapshot.getValue(UserProfile.class);
+                EntityDisplayModel displayUser = new EntityDisplayModel(secondaryUser);
                 //Setting hour ago the person was near
                 if (hourDiff == 1)
-                    secondaryUser.setRightAlignedInfo(hourDiff.toString() + " hour");
+                    displayUser.setRightAlignedInfo(hourDiff.toString() + " hour");
                 else if (hourDiff > 1)
-                    secondaryUser.setRightAlignedInfo(hourDiff.toString() + " hours");
-                mPastPeople.add(secondaryUser);
+                    displayUser.setRightAlignedInfo(hourDiff.toString() + " hours");
+                mPastPeople.add(displayUser);
                 mPeopleAdapter.notifyDataSetChanged();
             }
             @Override
@@ -261,8 +277,8 @@ public class ExploreFragment extends Fragment {
     }
 
     private void removeUserFromCurrentList(String secondaryUserId) {
-        int index = UserDisplayModel.findProfileOnUid(mCurrentPeople, secondaryUserId);
-        UserDisplayModel removedPerson = mCurrentPeople.get(index);
+        int index = EntityDisplayModel.findProfileOnUid(mCurrentPeople, secondaryUserId);
+        EntityDisplayModel removedPerson = mCurrentPeople.get(index);
         mPastPeople.remove(removedPerson);
         mPeopleAdapter.notifyDataSetChanged();
     }

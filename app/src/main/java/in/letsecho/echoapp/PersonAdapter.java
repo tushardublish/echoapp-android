@@ -12,10 +12,10 @@ import com.bumptech.glide.Glide;
 
 import java.util.List;
 
-import in.letsecho.echoapp.library.UserDisplayModel;
+import in.letsecho.echoapp.library.EntityDisplayModel;
 
-public class PersonAdapter extends ArrayAdapter<UserDisplayModel> {
-    public PersonAdapter(Context context, int resource, List<UserDisplayModel> objects) {
+public class PersonAdapter extends ArrayAdapter<EntityDisplayModel> {
+    public PersonAdapter(Context context, int resource, List<EntityDisplayModel> objects) {
         super(context, resource, objects);
     }
 
@@ -29,15 +29,15 @@ public class PersonAdapter extends ArrayAdapter<UserDisplayModel> {
         TextView nameTextView = (TextView) convertView.findViewById(R.id.nameTextView);
         TextView rightAlignedInfo = (TextView) convertView.findViewById(R.id.rightNumberTextView);
 
-        UserDisplayModel person = getItem(position);
-        nameTextView.setText(person.getName());
-        if (person.getPhotoUrl() != null) {
+        EntityDisplayModel entity = getItem(position);
+        nameTextView.setText(entity.getTitle());
+        if (entity.getPhotoUrl() != null) {
             Glide.with(photoImageView.getContext())
-                    .load(person.getPhotoUrl())
+                    .load(entity.getPhotoUrl())
                     .into(photoImageView);
         }
-        if(person.getRightAlignedInfo() != null) {
-            rightAlignedInfo.setText(person.getRightAlignedInfo());
+        if(entity.getRightAlignedInfo() != null) {
+            rightAlignedInfo.setText(entity.getRightAlignedInfo());
             rightAlignedInfo.setVisibility(View.VISIBLE);
         }
         return convertView;
