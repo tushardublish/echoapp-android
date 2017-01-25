@@ -13,7 +13,6 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.ListView;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
@@ -23,14 +22,11 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
-import java.util.ArrayList;
-
-import in.letsecho.echoapp.adapter.WorkAdapter;
 import in.letsecho.echoapp.library.FbEducation;
 import in.letsecho.echoapp.library.FbWork;
 import in.letsecho.echoapp.library.UserProfile;
 
-public class ProfileFragment extends DialogFragment {
+public class UserProfileFragment extends DialogFragment {
 
     private FirebaseDatabase mFirebaseDatabase;
     private DatabaseReference mUserProfileDbRef;
@@ -46,7 +42,7 @@ public class ProfileFragment extends DialogFragment {
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
         LayoutInflater inflater = this.getActivity().getLayoutInflater();
-        mView = inflater.inflate(R.layout.fragment_profile, null);
+        mView = inflater.inflate(R.layout.fragment_userprofile, null);
         builder.setView(mView);
 
         // Get mView items
@@ -72,7 +68,8 @@ public class ProfileFragment extends DialogFragment {
         super.onCreate(savedInstanceState);
         Bundle bundle = getArguments();
         mUserId = bundle.getString("secondaryUserId");
-
+        if(mUserId == null)
+            dismiss();
         mFirebaseDatabase = FirebaseDatabase.getInstance();
         mUserProfileDbRef = mFirebaseDatabase.getReference("users").child(mUserId);
         mUserProfileDbRef.addListenerForSingleValueEvent((new ValueEventListener() {

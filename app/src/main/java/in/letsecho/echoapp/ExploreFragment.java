@@ -81,6 +81,7 @@ public class ExploreFragment extends Fragment {
                 switch(groupPosition) {
                     case 0:
                         profile = mGroups.get(childPosition);
+                        break;
                     case 1:
                         profile = mCurrentPeople.get(childPosition);
                         break;
@@ -89,14 +90,20 @@ public class ExploreFragment extends Fragment {
                         break;
                 }
                 // Open Profile
-                DialogFragment profileDialog = new ProfileFragment();
-                Bundle bundle = new Bundle();
-                if(profile.getType() == USER_TYPE)
+                if(profile.getType() == USER_TYPE) {
+                    DialogFragment profileDialog = new UserProfileFragment();
+                    Bundle bundle = new Bundle();
                     bundle.putString("secondaryUserId", profile.getUid());
-                else if(profile.getType() == GROUP_TYPE)
+                    profileDialog.setArguments(bundle);
+                    profileDialog.show(getActivity().getFragmentManager(), "userprofile");
+                }
+                else if (profile.getType() == GROUP_TYPE) {
+                    DialogFragment profileDialog = new GroupProfileFragment();
+                    Bundle bundle = new Bundle();
                     bundle.putString("groupId", profile.getUid());
-                profileDialog.setArguments(bundle);
-                profileDialog.show(getActivity().getFragmentManager(), "profile");
+                    profileDialog.setArguments(bundle);
+                    profileDialog.show(getActivity().getFragmentManager(), "groupprofile");
+                }
                 return true;
             }
         });

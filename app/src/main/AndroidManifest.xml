@@ -48,7 +48,6 @@
 
         <activity
             android:name=".CreateGroupActivity"
-            android:label="@string/title_activity_create_group"
             android:parentActivityName=".MainActivity"
             android:theme="@style/AppTheme">
             <meta-data

@@ -22,7 +22,7 @@ import java.util.List;
 public class EntityDisplayModel {
 
     public static int USER_TYPE = 1;
-    public static int GROUP_TYPE = 1;
+    public static int GROUP_TYPE = 2;
     private String uid;
     private String title;
     private int type;
