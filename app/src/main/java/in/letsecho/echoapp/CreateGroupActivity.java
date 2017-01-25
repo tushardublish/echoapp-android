@@ -2,6 +2,7 @@ package in.letsecho.echoapp;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
@@ -12,6 +13,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.firebase.geofire.GeoFire;
 import com.firebase.geofire.GeoLocation;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -32,6 +34,7 @@ public class CreateGroupActivity extends AppCompatActivity {
     private FirebaseUser mCurrentUser;
     private DatabaseReference mRootDbRef, mCurrentLocationDbRef;
     private ValueEventListener mCurrentLocationEventListener;
+    private GeoFire mGeoFire;
     private GeoLocation mCurrentLocation;
     private EditText mTitle;
     private EditText mDescription;
@@ -46,6 +49,8 @@ public class CreateGroupActivity extends AppCompatActivity {
         mRootDbRef = mFirebaseDatabase.getReference();
         mFirebaseAuth = FirebaseAuth.getInstance();
         mCurrentUser = mFirebaseAuth.getCurrentUser();
+        DatabaseReference locationDbRef = mRootDbRef.child("locations/groups");
+        mGeoFire = new GeoFire(locationDbRef);
         getCurrentLocation();
         //View
         mTitle = (EditText) findViewById(R.id.titleText);
@@ -62,12 +67,14 @@ public class CreateGroupActivity extends AppCompatActivity {
                 String description = mDescription.getText().toString();
                 String ownerId = mCurrentUser.getUid();
                 String ownerName = mCurrentUser.getDisplayName();
-                Group newGroup = new Group(title, description, ownerId, ownerName, mCurrentLocation);
-                mRootDbRef.child("groups").push().setValue(newGroup);
+                Group newGroup = new Group(title, description, ownerId, ownerName);
+                DatabaseReference groupDbRef = mRootDbRef.child("groups").push();
+                groupDbRef.setValue(newGroup);
+                String groupId = groupDbRef.getKey();
+                mGeoFire.setLocation(groupId, mCurrentLocation);
 
-                Toast.makeText(getParent(), "Group created successfully!", Toast.LENGTH_LONG).show();
-                Intent mainIntent = new Intent(getApplicationContext(), MainActivity.class);
-                startActivity(mainIntent);
+                Toast.makeText(getApplicationContext(), "Group created successfully!", Toast.LENGTH_LONG).show();
+                finish();
             }
         });
     }
