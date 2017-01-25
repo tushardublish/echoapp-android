@@ -20,7 +20,6 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -47,8 +46,8 @@ public class ExploreFragment extends Fragment {
     private static String HEADER3 = "People near you in last 24 hours";
     private static final String NEARBY_DISTANCE_CONFIG_KEY = "nearby_distance";
     private static long HOURS_TO_MILLI_SECS = 60*60*1000;
-    private ExpandableListView mPeopleListView;
-    private PersonAdapterExpandableList mPeopleAdapter;
+    private ExpandableListView mExploreListView;
+    private PersonAdapterExpandableList mExploreAdapter;
     private ProgressBar mProgressBar;
     private List<String> mSectionHeaders;
     private List<EntityDisplayModel> mCurrentPeople, mPastPeople, mGroups;
@@ -58,13 +57,12 @@ public class ExploreFragment extends Fragment {
     private FirebaseDatabase mFirebaseDatabase;
     private DatabaseReference mUsersDbRef, mLocationsDbRef, mCurrentLocationDbRef;
     private Query mPastLocationDbRef;
-    private ChildEventListener mUserProfileEventListener;
     private ValueEventListener mCurrentLocationEventListener, mPastPeopleEventListener;
-    private GeoQueryEventListener mNearbyPeopleEventListener;
+    private GeoQueryEventListener mNearbyPeopleEventListener, mNearbyGroupEventListener;
     private FirebaseAuth mFirebaseAuth;
     private FirebaseUser mCurrentUser;
-    private GeoFire mNearbyPeopleGeoRef;
-    private GeoQuery mNearbyPeopleGeoQuery;
+    private GeoFire mNearbyPeopleGeoRef, mNearbyGroupGeoRef;
+    private GeoQuery mNearbyPeopleGeoQuery, mNearbyGroupGeoQuery;
     private GeoLocation mCurrentLocation;
     private FirebaseRemoteConfig mFirebaseRemoteConfig;
 
@@ -73,9 +71,9 @@ public class ExploreFragment extends Fragment {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_explore, container, false);
         // Initialize references to views
-        mPeopleListView = (ExpandableListView) view.findViewById(R.id.peopleListView);
-        mPeopleListView.setAdapter(mPeopleAdapter);
-        mPeopleListView.setOnChildClickListener(new ExpandableListView.OnChildClickListener() {
+        mExploreListView = (ExpandableListView) view.findViewById(R.id.peopleListView);
+        mExploreListView.setAdapter(mExploreAdapter);
+        mExploreListView.setOnChildClickListener(new ExpandableListView.OnChildClickListener() {
             @Override
             public boolean onChildClick(ExpandableListView parent, View view, int groupPosition,
                                      int childPosition, long id) {
@@ -119,6 +117,8 @@ public class ExploreFragment extends Fragment {
         mUsersDbRef = mFirebaseDatabase.getReference("users");
         mLocationsDbRef = mFirebaseDatabase.getReference("locations/current");
         mNearbyPeopleGeoRef = new GeoFire(mLocationsDbRef);
+        DatabaseReference groupLocationDbRef = mFirebaseDatabase.getReference("locations/groups");
+        mNearbyGroupGeoRef = new GeoFire(groupLocationDbRef);
 
         // Initialize person ListView and its adapter
         setupExpandableList();
@@ -142,7 +142,7 @@ public class ExploreFragment extends Fragment {
         mExpandableList.put(HEADER1, mGroups);
         mExpandableList.put(HEADER2, mCurrentPeople);
         mExpandableList.put(HEADER3, mPastPeople);
-        mPeopleAdapter = new PersonAdapterExpandableList(this.getContext(), mSectionHeaders, mExpandableList);
+        mExploreAdapter = new PersonAdapterExpandableList(this.getContext(), mSectionHeaders, mExpandableList);
     }
 
     @Override
@@ -159,7 +159,7 @@ public class ExploreFragment extends Fragment {
         super.onPause();
         mCurrentPeople.clear();
         mPastPeople.clear();
-        mPeopleAdapter.notifyDataSetChanged();
+        mExploreAdapter.notifyDataSetChanged();
         detachDatabaseReadListener();
     }
 
@@ -173,6 +173,7 @@ public class ExploreFragment extends Fragment {
                     if(locationObj != null) {
                         GeoLocation currentLocation = new GeoLocation((double) locationObj.get(0),
                                 (double) locationObj.get(1));
+                        getNearbyGroups(currentLocation);
                         getNearbyPeople(currentLocation);
                     }
                 }
@@ -183,6 +184,34 @@ public class ExploreFragment extends Fragment {
         }
 
         getPastNearbyPeople();
+    }
+
+    private void getNearbyGroups(GeoLocation currentLocation) {
+        if(mCurrentLocation == null) {
+            mNearbyGroupGeoQuery = mNearbyGroupGeoRef.queryAtLocation(currentLocation, mNearbyDistance);
+        } else {
+            mNearbyGroupGeoQuery.setCenter(currentLocation);
+            mCurrentLocation = currentLocation;
+        }
+        if(mNearbyGroupEventListener == null) {
+            mNearbyGroupEventListener = new GeoQueryEventListener() {
+                @Override
+                public void onKeyEntered(String key, GeoLocation location) {
+                    addGroupToList(key);
+                }
+                @Override
+                public void onKeyExited(String key) {
+                    removeGroupFromList(key);
+                }
+                @Override
+                public void onKeyMoved(String key, GeoLocation location) {}
+                @Override
+                public void onGeoQueryReady() {}
+                @Override
+                public void onGeoQueryError(DatabaseError error) {}
+            };
+            mNearbyGroupGeoQuery.addGeoQueryEventListener(mNearbyGroupEventListener);
+        }
     }
 
     private void getNearbyPeople(GeoLocation currentLocation) {
@@ -239,6 +268,20 @@ public class ExploreFragment extends Fragment {
         }
     }
 
+    private void addGroupToList(String groupId) {
+        DatabaseReference groupDbRef = mFirebaseDatabase.getReference("groups").child(groupId);
+        groupDbRef.addListenerForSingleValueEvent((new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                Group group = dataSnapshot.getValue(Group.class);
+                EntityDisplayModel displayUser = new EntityDisplayModel(group);
+                mGroups.add(displayUser);
+                mExploreAdapter.notifyDataSetChanged();
+            }
+            @Override
+            public void onCancelled(DatabaseError databaseError) {}
+        }));
+    }
 
 
     private void addUserToCurrentList(String secondaryUserId) {
@@ -249,7 +292,7 @@ public class ExploreFragment extends Fragment {
                 UserProfile secondaryUser = dataSnapshot.getValue(UserProfile.class);
                 EntityDisplayModel displayUser = new EntityDisplayModel(secondaryUser);
                 mCurrentPeople.add(displayUser);
-                mPeopleAdapter.notifyDataSetChanged();
+                mExploreAdapter.notifyDataSetChanged();
             }
             @Override
             public void onCancelled(DatabaseError databaseError) {}
@@ -269,18 +312,25 @@ public class ExploreFragment extends Fragment {
                 else if (hourDiff > 1)
                     displayUser.setRightAlignedInfo(hourDiff.toString() + " hours");
                 mPastPeople.add(displayUser);
-                mPeopleAdapter.notifyDataSetChanged();
+                mExploreAdapter.notifyDataSetChanged();
             }
             @Override
             public void onCancelled(DatabaseError databaseError) {}
         }));
     }
 
+    private void removeGroupFromList(String groupId) {
+        int index = EntityDisplayModel.findProfileOnUid(mGroups, groupId);
+        EntityDisplayModel removedGroup = mGroups.get(index);
+        mGroups.remove(removedGroup);
+        mExploreAdapter.notifyDataSetChanged();
+    }
+
     private void removeUserFromCurrentList(String secondaryUserId) {
         int index = EntityDisplayModel.findProfileOnUid(mCurrentPeople, secondaryUserId);
         EntityDisplayModel removedPerson = mCurrentPeople.get(index);
-        mPastPeople.remove(removedPerson);
-        mPeopleAdapter.notifyDataSetChanged();
+        mCurrentPeople.remove(removedPerson);
+        mExploreAdapter.notifyDataSetChanged();
     }
 
     private void detachDatabaseReadListener() {
@@ -288,6 +338,12 @@ public class ExploreFragment extends Fragment {
         if(mCurrentLocationEventListener != null) {
             mCurrentLocationDbRef.removeEventListener(mCurrentLocationEventListener);
             mCurrentLocationEventListener = null;
+        }
+
+        if(mNearbyGroupEventListener != null) {
+            mNearbyGroupGeoQuery.removeAllListeners();
+//            mNearbyGroupGeoQuery.removeGeoQueryEventListener(mNearbyGroupEventListener);
+            mNearbyGroupEventListener = null;
         }
 
         if(mNearbyPeopleEventListener != null) {
