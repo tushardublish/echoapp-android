@@ -91,6 +91,8 @@ public class ChatActivity extends AppCompatActivity {
         mMessageEditText = (EditText) findViewById(R.id.messageEditText);
         mSendButton = (Button) findViewById(R.id.sendButton);
         mToolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(mToolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         // Initialize message ListView and its adapter
         List<ChatMessage> chatMessages = new ArrayList<>();
@@ -163,7 +165,7 @@ public class ChatActivity extends AppCompatActivity {
             mSecondaryUserDbRef = mFirebaseDatabase.getReference().child("users").child(mSecondaryUid);
         } else {
             Intent mainIntent = new Intent(this.getApplicationContext(), MainActivity.class);
-            startActivity(intent);
+            startActivity(mainIntent);
         }
     }
 
