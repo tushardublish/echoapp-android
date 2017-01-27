@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import in.letsecho.echoapp.library.EntityDisplayModel;
+import in.letsecho.echoapp.library.Group;
 import in.letsecho.echoapp.library.UserProfile;
 
 public class ConnectFragment extends Fragment {
@@ -36,9 +37,9 @@ public class ConnectFragment extends Fragment {
     private FirebaseAuth mFirebaseAuth;
     private FirebaseDatabase mFirebaseDatabase;
     private DatabaseReference mRootDbRef;
-    private Query mUserChatsDbRef;
+    private Query mUserChatsQuery, mGroupChatsQuery;
     private ArrayList<Query> mChatDbRefs;
-    private ChildEventListener mUserChatsEventListener;
+    private ChildEventListener mUserChatsEventListener, mGroupChatsEventListener;
     private ArrayList<ValueEventListener> mChatListeners;
     private List<EntityDisplayModel> mPersons;
 
@@ -101,7 +102,7 @@ public class ConnectFragment extends Fragment {
     }
 
     private void attachDatabaseReadListener() {
-        mUserChatsDbRef = mRootDbRef.child("chats/user_chats").child(mCurrentUser.getUid()).orderByValue().limitToLast(1000);
+        mUserChatsQuery = mRootDbRef.child("chats/user_chats").child(mCurrentUser.getUid()).orderByValue().limitToLast(1000);
         if (mUserChatsEventListener == null) {
             mUserChatsEventListener = new ChildEventListener() {
                 @Override
@@ -119,7 +120,27 @@ public class ConnectFragment extends Fragment {
                 public void onChildMoved(DataSnapshot dataSnapshot, String s) {}
                 public void onCancelled(DatabaseError databaseError) {}
             };
-            mUserChatsDbRef.addChildEventListener(mUserChatsEventListener);
+            mUserChatsQuery.addChildEventListener(mUserChatsEventListener);
+        }
+
+        mGroupChatsQuery = mRootDbRef.child("chats/user_groups").child(mCurrentUser.getUid()).orderByValue().limitToLast(1000);
+        if (mGroupChatsEventListener == null) {
+            mGroupChatsEventListener = new ChildEventListener() {
+                @Override
+                public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+                    String groupId = dataSnapshot.getKey();
+                    String chatId = dataSnapshot.getValue(String.class);
+                    addGroupToList(groupId);
+                    setChatListener(chatId, groupId);
+
+                }
+
+                public void onChildChanged(DataSnapshot dataSnapshot, String s) {}
+                public void onChildRemoved(DataSnapshot dataSnapshot) {}
+                public void onChildMoved(DataSnapshot dataSnapshot, String s) {}
+                public void onCancelled(DatabaseError databaseError) {}
+            };
+            mGroupChatsQuery.addChildEventListener(mGroupChatsEventListener);
         }
     }
 
@@ -138,15 +159,30 @@ public class ConnectFragment extends Fragment {
         }));
     }
 
+    private void addGroupToList(String groupId) {
+        DatabaseReference userDbRef = mRootDbRef.child("groups").child(groupId);
+        userDbRef.addListenerForSingleValueEvent((new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                Group group = dataSnapshot.getValue(Group.class);
+                EntityDisplayModel displayEntity = new EntityDisplayModel(group);
+                mPersonAdapter.add(displayEntity);
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {}
+        }));
+    }
+
     //Adding Listeners to each chat to get unread messages count
-    private void setChatListener(String chatId, final String secondaryUserId) {
+    private void setChatListener(String chatId, final String entityId) {
         Query chatDbRef = mRootDbRef.child("chats/messages").child(chatId)
                 .orderByChild("seen/"+ mCurrentUser.getUid()).equalTo(null);
         ValueEventListener chatListener = chatDbRef.addValueEventListener((new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 Long unreadMessageCount = dataSnapshot.getChildrenCount();
-                int index = EntityDisplayModel.findProfileOnUid(mPersons, secondaryUserId);
+                int index = EntityDisplayModel.findProfileOnUid(mPersons, entityId);
                 if(index >= 0 && unreadMessageCount > 0) {
                     mPersons.get(index).setRightAlignedInfo(unreadMessageCount.toString());
                     mPersonAdapter.notifyDataSetChanged();
@@ -162,8 +198,13 @@ public class ConnectFragment extends Fragment {
 
     private void detachDatabaseReadListener() {
         if (mUserChatsEventListener != null) {
-            mUserChatsDbRef.removeEventListener(mUserChatsEventListener);
+            mUserChatsQuery.removeEventListener(mUserChatsEventListener);
             mUserChatsEventListener = null;
+        }
+
+        if (mGroupChatsEventListener != null) {
+            mGroupChatsQuery.removeEventListener(mGroupChatsEventListener);
+            mGroupChatsEventListener = null;
         }
 
         for(int i = 0; i< mChatDbRefs.size(); i++){

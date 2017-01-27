@@ -9,9 +9,6 @@ import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.InputFilter;
 import android.text.TextWatcher;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -39,14 +36,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import in.letsecho.echoapp.library.Group;
 import in.letsecho.library.ChatMessage;
 import in.letsecho.echoapp.library.UserProfile;
 
 public class ChatActivity extends AppCompatActivity {
 
     private static final String TAG = "ChatActivity";
-    public static final String ANONYMOUS = "anonymous";
-    public static String SECONDARY_USER = "secondary_user";
     public static final int DEFAULT_MSG_LENGTH_LIMIT = 1000;
     public static final int RC_SIGN_IN = 1;
     private static final int RC_PHOTO_PICKER =  2;
@@ -66,10 +62,10 @@ public class ChatActivity extends AppCompatActivity {
     private int mChatType;
 
     private FirebaseDatabase mFirebaseDatabase;
-    private DatabaseReference mChatsDbRef, mSecondaryUserDbRef, mGroupDbRef;
-    private DatabaseReference mCurrentUserChatQuery, mCurrentChatDbRef;
+    private DatabaseReference mChatsDbRef, mOtherEntityDbRef;
+    private DatabaseReference mCurrentUserChatDbRef, mCurrentChatDbRef;
     private ChildEventListener mMessageEventListener;
-    private ValueEventListener mSecondaryUserEventListener, mCurrentUserChatsEventListener;
+    private ValueEventListener mCurrentUserChatsEventListener;
     private FirebaseAuth mFirebaseAuth;
     private FirebaseAuth.AuthStateListener mAuthStateListener;
     private FirebaseStorage mFirebaseStorage;
@@ -119,9 +115,7 @@ public class ChatActivity extends AppCompatActivity {
         // Enable Send button when there's text to send
         mMessageEditText.addTextChangedListener(new TextWatcher() {
             @Override
-            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-            }
-
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) { }
             @Override
             public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
                 if (charSequence.toString().trim().length() > 0) {
@@ -130,10 +124,8 @@ public class ChatActivity extends AppCompatActivity {
                     mSendButton.setEnabled(false);
                 }
             }
-
             @Override
-            public void afterTextChanged(Editable editable) {
-            }
+            public void afterTextChanged(Editable editable) {}
         });
         mMessageEditText.setFilters(new InputFilter[]{new InputFilter.LengthFilter(DEFAULT_MSG_LENGTH_LIMIT)});
 
@@ -145,7 +137,6 @@ public class ChatActivity extends AppCompatActivity {
                 ChatMessage chatMessage = new ChatMessage(mMessageEditText.getText().toString(),
                         mCurrentUser.getDisplayName(), mCurrentUser.getUid(), null, new HashMap());
                 mCurrentChatDbRef.push().setValue(chatMessage);
-
                 // Clear input box
                 mMessageEditText.setText("");
             }
@@ -166,11 +157,11 @@ public class ChatActivity extends AppCompatActivity {
         if (intent != null && intent.hasExtra("CHAT_USER")) {
             mChatType = CHAT_USER;
             mSecondaryUid = intent.getStringExtra("CHAT_USER");
-            mSecondaryUserDbRef = mFirebaseDatabase.getReference().child("users").child(mSecondaryUid);
+            mOtherEntityDbRef = mFirebaseDatabase.getReference().child("users").child(mSecondaryUid);
         } else if(intent != null && intent.hasExtra("CHAT_GROUP")) {
             mChatType = CHAT_GROUP;
             mGroupId = intent.getStringExtra("CHAT_GROUP");
-            mGroupDbRef = mFirebaseDatabase.getReference().child("groups").child(mGroupId);
+            mOtherEntityDbRef = mFirebaseDatabase.getReference().child("groups").child(mGroupId);
         }
         else {
             Intent mainIntent = new Intent(this.getApplicationContext(), MainActivity.class);
@@ -261,22 +252,28 @@ public class ChatActivity extends AppCompatActivity {
     }
 
     private void attachDatabaseReadListener() {
-        //To get secondary user name
-        if (mSecondaryUserEventListener == null) {
-            mSecondaryUserEventListener = new ValueEventListener() {
+        //To get secondary user name or group name
+        mOtherEntityDbRef.addListenerForSingleValueEvent( new ValueEventListener() {
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot) {
-                    UserProfile secondaryUser = dataSnapshot.getValue(UserProfile.class);
-                    mToolbar.setTitle(secondaryUser.getName());
+                    if(mChatType == CHAT_USER) {
+                        UserProfile secondaryUser = dataSnapshot.getValue(UserProfile.class);
+                        mToolbar.setTitle(secondaryUser.getName());
+                    } else if(mChatType == CHAT_GROUP) {
+                        Group group = dataSnapshot.getValue(Group.class);
+                        mToolbar.setTitle(group.getTitle());
+                    }
                 };
                 @Override
                 public void onCancelled(DatabaseError databaseError) {};
-            };
-            mSecondaryUserDbRef.addValueEventListener(mSecondaryUserEventListener);
-        }
+            });
+
 
         // Get mChatId or create a new chat
-        mCurrentUserChatQuery = mChatsDbRef.child("user_chats").child(mCurrentUser.getUid()).child(mSecondaryUid);
+        if (mChatType == CHAT_USER)
+            mCurrentUserChatDbRef = mChatsDbRef.child("user_chats").child(mCurrentUser.getUid()).child(mSecondaryUid);
+        else if(mChatType == CHAT_GROUP)
+            mCurrentUserChatDbRef = mChatsDbRef.child("user_groups").child(mCurrentUser.getUid()).child(mGroupId);
         if (mCurrentUserChatsEventListener == null) {
             mCurrentUserChatsEventListener = new ValueEventListener() {
                 @Override
@@ -305,7 +302,7 @@ public class ChatActivity extends AppCompatActivity {
                 @Override
                 public void onCancelled(DatabaseError databaseError) {};
             };
-            mCurrentUserChatQuery.addValueEventListener(mCurrentUserChatsEventListener);
+            mCurrentUserChatDbRef.addValueEventListener(mCurrentUserChatsEventListener);
         }
     }
 
@@ -337,15 +334,9 @@ public class ChatActivity extends AppCompatActivity {
             mMessageEventListener = null;
         }
 
-        if (mSecondaryUserEventListener != null) {
-            mSecondaryUserDbRef.removeEventListener(mSecondaryUserEventListener);
-            mSecondaryUserEventListener = null;
-        }
-
         if(mCurrentUserChatsEventListener != null) {
-            mCurrentUserChatQuery.removeEventListener(mCurrentUserChatsEventListener);
+            mCurrentUserChatDbRef.removeEventListener(mCurrentUserChatsEventListener);
             mCurrentUserChatsEventListener = null;
         }
-
     }
 }

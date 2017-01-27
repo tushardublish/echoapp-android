@@ -123,8 +123,10 @@ public class GroupProfileFragment extends DialogFragment {
                 mJoinButton.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        addUserToGroup(mCurrentUser.getUid(), group);
-                        Toast.makeText(getApplicationContext(), "Group joined successfully!", Toast.LENGTH_LONG).show();
+                        if(mMember == Boolean.FALSE) {
+                            addUserToGroup(mCurrentUser.getUid(), group);
+                            Toast.makeText(getApplicationContext(), "Group joined successfully!", Toast.LENGTH_LONG).show();
+                        }
                         Intent chatIntent = new Intent(getActivity().getApplicationContext(), ChatActivity.class)
                                 .putExtra("CHAT_GROUP", group.getId());
                         startActivity(chatIntent);
@@ -138,8 +140,13 @@ public class GroupProfileFragment extends DialogFragment {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
                         String chatId = dataSnapshot.getValue(String.class);
-                        if(chatId != null)
+                        // Checking if the chat exists in groups of the user
+                        if(chatId != null) {
                             mMember = Boolean.TRUE;
+                            mJoinButton.setText("Open");
+                        }
+                        else
+                            mMember = Boolean.FALSE;
                     }
                     @Override
                     public void onCancelled(DatabaseError databaseError) { }
