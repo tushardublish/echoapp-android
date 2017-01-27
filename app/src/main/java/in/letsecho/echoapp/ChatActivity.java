@@ -50,6 +50,8 @@ public class ChatActivity extends AppCompatActivity {
     public static final int DEFAULT_MSG_LENGTH_LIMIT = 1000;
     public static final int RC_SIGN_IN = 1;
     private static final int RC_PHOTO_PICKER =  2;
+    private static final int CHAT_USER = 1;
+    private static final int CHAT_GROUP = 2;
 
     private ListView mMessageListView;
     private MessageAdapter mMessageAdapter;
@@ -60,11 +62,12 @@ public class ChatActivity extends AppCompatActivity {
     private Toolbar mToolbar;
 
     private FirebaseUser mCurrentUser;
-    private String mSecondaryUid, mChatId;
+    private String mSecondaryUid, mChatId, mGroupId;
+    private int mChatType;
 
     private FirebaseDatabase mFirebaseDatabase;
-    private DatabaseReference mChatsDbRef, mSecondaryUserDbRef, mCurrentChatDbRef;
-    private DatabaseReference mCurrentUserChatQuery;
+    private DatabaseReference mChatsDbRef, mSecondaryUserDbRef, mGroupDbRef;
+    private DatabaseReference mCurrentUserChatQuery, mCurrentChatDbRef;
     private ChildEventListener mMessageEventListener;
     private ValueEventListener mSecondaryUserEventListener, mCurrentUserChatsEventListener;
     private FirebaseAuth mFirebaseAuth;
@@ -161,9 +164,15 @@ public class ChatActivity extends AppCompatActivity {
         // Initialize Intent
         Intent intent = getIntent();
         if (intent != null && intent.hasExtra("CHAT_USER")) {
+            mChatType = CHAT_USER;
             mSecondaryUid = intent.getStringExtra("CHAT_USER");
             mSecondaryUserDbRef = mFirebaseDatabase.getReference().child("users").child(mSecondaryUid);
-        } else {
+        } else if(intent != null && intent.hasExtra("CHAT_GROUP")) {
+            mChatType = CHAT_GROUP;
+            mGroupId = intent.getStringExtra("CHAT_GROUP");
+            mGroupDbRef = mFirebaseDatabase.getReference().child("groups").child(mGroupId);
+        }
+        else {
             Intent mainIntent = new Intent(this.getApplicationContext(), MainActivity.class);
             startActivity(mainIntent);
         }
@@ -338,23 +347,5 @@ public class ChatActivity extends AppCompatActivity {
             mCurrentUserChatsEventListener = null;
         }
 
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.main_menu, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.sign_out_menu:
-                AuthUI.getInstance().signOut(this);
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
-        }
     }
 }

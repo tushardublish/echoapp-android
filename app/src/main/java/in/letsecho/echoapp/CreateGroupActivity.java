@@ -24,6 +24,8 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import in.letsecho.echoapp.library.Group;
 
@@ -33,11 +35,9 @@ public class CreateGroupActivity extends AppCompatActivity {
     private FirebaseAuth mFirebaseAuth;
     private FirebaseUser mCurrentUser;
     private DatabaseReference mRootDbRef, mCurrentLocationDbRef;
-    private ValueEventListener mCurrentLocationEventListener;
     private GeoFire mGeoFire;
     private GeoLocation mCurrentLocation;
-    private EditText mTitle;
-    private EditText mDescription;
+    private EditText mTitle, mDescription, mPhoneNo;
     private Button mCreateButton;
 
     @Override
@@ -55,6 +55,7 @@ public class CreateGroupActivity extends AppCompatActivity {
         //View
         mTitle = (EditText) findViewById(R.id.titleText);
         mDescription = (EditText) findViewById(R.id.descriptionText);
+        mPhoneNo = (EditText) findViewById(R.id.phoneNoText);
         mCreateButton = (Button) findViewById(R.id.createButton);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -63,21 +64,38 @@ public class CreateGroupActivity extends AppCompatActivity {
         mCreateButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                //Create Group
                 String title = mTitle.getText().toString();
                 String description = mDescription.getText().toString();
+                String phoneNo = mPhoneNo.getText().toString();
                 String ownerId = mCurrentUser.getUid();
                 String ownerName = mCurrentUser.getDisplayName();
-                Group newGroup = new Group(title, description, ownerId, ownerName);
+                Group newGroup = new Group(title, description, ownerId, ownerName, phoneNo);
                 DatabaseReference groupDbRef = mRootDbRef.child("groups").push();
                 String groupId = groupDbRef.getKey();
                 newGroup.setId(groupId);
+                String chatId = setGroupChat(groupId);
+                newGroup.setChatId(chatId);
                 groupDbRef.setValue(newGroup);
+                //Set Location
                 mGeoFire.setLocation(groupId, mCurrentLocation);
 
                 Toast.makeText(getApplicationContext(), "Group created successfully!", Toast.LENGTH_LONG).show();
                 finish();
             }
         });
+    }
+
+    private String setGroupChat(String groupId) {
+        //Set Chat
+        DatabaseReference chatInfoDbRef = mRootDbRef.child("chats/info").push();
+        Map<String, Object> users = new HashMap<String, Object>();
+        users.put(mCurrentUser.getUid(), Boolean.TRUE);
+        chatInfoDbRef.child("users").setValue(users);
+        //Insert User Chat
+        String chatId = chatInfoDbRef.getKey();
+        mRootDbRef.child("chats/user_groups").child(mCurrentUser.getUid()).child(groupId).setValue(chatId);
+        return chatId;
     }
 
     private void getCurrentLocation() {

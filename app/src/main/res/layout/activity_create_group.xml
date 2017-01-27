@@ -67,12 +67,32 @@
             android:minHeight="100dp"
             android:gravity="start" />
 
+        <TextView
+            android:text="Phone No. (Optional)"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_row="4"
+            android:layout_column="0"
+            android:layout_marginTop="16dp"
+            android:id="@+id/phoneTextView" />
+
+        <EditText
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:inputType="phone"
+            android:layout_row="5"
+            android:layout_column="0"
+            android:layout_marginTop="8dp"
+            android:id="@+id/phoneNoText"
+            android:ems="10"
+            android:phoneNumber="true" />
+
         <Button
             android:text="@string/create_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:id="@+id/createButton"
-            android:layout_row="4"
+            android:layout_row="6"
             android:layout_column="0"
             android:layout_marginTop="16dp"
             android:layout_gravity="bottom|end" />

@@ -73,40 +73,7 @@ public class ExploreFragment extends Fragment {
         // Initialize references to views
         mExploreListView = (ExpandableListView) view.findViewById(R.id.peopleListView);
         mExploreListView.setAdapter(mExploreAdapter);
-        mExploreListView.setOnChildClickListener(new ExpandableListView.OnChildClickListener() {
-            @Override
-            public boolean onChildClick(ExpandableListView parent, View view, int groupPosition,
-                                     int childPosition, long id) {
-                EntityDisplayModel profile = null;
-                switch(groupPosition) {
-                    case 0:
-                        profile = mGroups.get(childPosition);
-                        break;
-                    case 1:
-                        profile = mCurrentPeople.get(childPosition);
-                        break;
-                    case 2:
-                        profile = mPastPeople.get(childPosition);
-                        break;
-                }
-                // Open Profile
-                if(profile.getType() == USER_TYPE) {
-                    DialogFragment profileDialog = new UserProfileFragment();
-                    Bundle bundle = new Bundle();
-                    bundle.putString("secondaryUserId", profile.getUid());
-                    profileDialog.setArguments(bundle);
-                    profileDialog.show(getActivity().getFragmentManager(), "userprofile");
-                }
-                else if (profile.getType() == GROUP_TYPE) {
-                    DialogFragment profileDialog = new GroupProfileFragment();
-                    Bundle bundle = new Bundle();
-                    bundle.putString("groupId", profile.getUid());
-                    profileDialog.setArguments(bundle);
-                    profileDialog.show(getActivity().getFragmentManager(), "groupprofile");
-                }
-                return true;
-            }
-        });
+        mExploreListView.setOnChildClickListener(getItemOnClickListener());
 
         // Initialize progress bar
         mProgressBar = (ProgressBar) view.findViewById(R.id.progressBar);
@@ -164,10 +131,49 @@ public class ExploreFragment extends Fragment {
     @Override
     public void onPause() {
         super.onPause();
+        mGroups.clear();
         mCurrentPeople.clear();
         mPastPeople.clear();
         mExploreAdapter.notifyDataSetChanged();
         detachDatabaseReadListener();
+    }
+
+    private ExpandableListView.OnChildClickListener getItemOnClickListener() {
+        ExpandableListView.OnChildClickListener listener =  new ExpandableListView.OnChildClickListener() {
+            @Override
+            public boolean onChildClick(ExpandableListView parent, View view, int groupPosition,
+                                        int childPosition, long id) {
+                EntityDisplayModel profile = null;
+                switch(groupPosition) {
+                    case 0:
+                        profile = mGroups.get(childPosition);
+                        break;
+                    case 1:
+                        profile = mCurrentPeople.get(childPosition);
+                        break;
+                    case 2:
+                        profile = mPastPeople.get(childPosition);
+                        break;
+                }
+                // Open Profile
+                if(profile.getType() == USER_TYPE) {
+                    DialogFragment profileDialog = new UserProfileFragment();
+                    Bundle bundle = new Bundle();
+                    bundle.putString("secondaryUserId", profile.getUid());
+                    profileDialog.setArguments(bundle);
+                    profileDialog.show(getActivity().getFragmentManager(), "userprofile");
+                }
+                else if (profile.getType() == GROUP_TYPE) {
+                    DialogFragment profileDialog = new GroupProfileFragment();
+                    Bundle bundle = new Bundle();
+                    bundle.putString("groupId", profile.getUid());
+                    profileDialog.setArguments(bundle);
+                    profileDialog.show(getActivity().getFragmentManager(), "groupprofile");
+                }
+                return true;
+            }
+        };
+        return listener;
     }
 
     private void attachDatabaseReadListener() {
