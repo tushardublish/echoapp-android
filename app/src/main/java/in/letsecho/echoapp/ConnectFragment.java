@@ -27,6 +27,9 @@ import in.letsecho.echoapp.library.EntityDisplayModel;
 import in.letsecho.echoapp.library.Group;
 import in.letsecho.echoapp.library.UserProfile;
 
+import static in.letsecho.echoapp.library.EntityDisplayModel.GROUP_TYPE;
+import static in.letsecho.echoapp.library.EntityDisplayModel.USER_TYPE;
+
 public class ConnectFragment extends Fragment {
 
     private ListView mPersonListView;
@@ -54,9 +57,16 @@ public class ConnectFragment extends Fragment {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 EntityDisplayModel item = mPersonAdapter.getItem(position);
-                Intent intent = new Intent(getActivity().getApplicationContext(), ChatActivity.class)
-                        .putExtra("CHAT_USER", item.getUid());
-                startActivity(intent);
+                if(item.getType() == USER_TYPE) {
+                    Intent intent = new Intent(getActivity().getApplicationContext(), ChatActivity.class)
+                            .putExtra("CHAT_USER", item.getUid());
+                    startActivity(intent);
+                }
+                else if(item.getType() == GROUP_TYPE) {
+                    Intent intent = new Intent(getActivity().getApplicationContext(), ChatActivity.class)
+                            .putExtra("CHAT_GROUP", item.getUid());
+                    startActivity(intent);
+                }
             }
         });
 
@@ -132,7 +142,6 @@ public class ConnectFragment extends Fragment {
                     String chatId = dataSnapshot.getValue(String.class);
                     addGroupToList(groupId);
                     setChatListener(chatId, groupId);
-
                 }
 
                 public void onChildChanged(DataSnapshot dataSnapshot, String s) {}

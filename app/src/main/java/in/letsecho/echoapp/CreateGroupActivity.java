@@ -91,7 +91,7 @@ public class CreateGroupActivity extends AppCompatActivity {
         DatabaseReference chatInfoDbRef = mRootDbRef.child("chats/info").push();
         Map<String, Object> users = new HashMap<String, Object>();
         users.put(mCurrentUser.getUid(), Boolean.TRUE);
-        chatInfoDbRef.child("users").setValue(users);
+        chatInfoDbRef.child("users").updateChildren(users);
         //Insert User Chat
         String chatId = chatInfoDbRef.getKey();
         mRootDbRef.child("chats/user_groups").child(mCurrentUser.getUid()).child(groupId).setValue(chatId);

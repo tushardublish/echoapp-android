@@ -2,6 +2,8 @@ package in.letsecho.echoapp.library;
 
 import com.firebase.geofire.GeoLocation;
 
+import static java.lang.Boolean.TRUE;
+
 public class Group {
     private String id;
     private String chatId;
@@ -10,6 +12,7 @@ public class Group {
     private String ownerId;
     private String ownerName;
     private String phoneNo;
+    private boolean visible;
 
     public Group() {}
 
@@ -19,6 +22,7 @@ public class Group {
         this.ownerId = ownerId;
         this.ownerName = ownerName;
         this.phoneNo = phoneNo;
+        this.visible = TRUE;
     }
 
     public String getId() {
@@ -75,5 +79,13 @@ public class Group {
 
     public void setPhoneNo(String phoneNo) {
         this.phoneNo = phoneNo;
+    }
+
+    public boolean isVisible() {
+        return visible;
+    }
+
+    public void setVisible(boolean visible) {
+        this.visible = visible;
     }
 }

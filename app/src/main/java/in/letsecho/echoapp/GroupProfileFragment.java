@@ -34,6 +34,7 @@ import in.letsecho.echoapp.library.Group;
 import in.letsecho.echoapp.library.UserProfile;
 
 import static com.facebook.FacebookSdk.getApplicationContext;
+import static java.lang.Boolean.FALSE;
 
 public class GroupProfileFragment extends DialogFragment {
 
@@ -42,7 +43,7 @@ public class GroupProfileFragment extends DialogFragment {
     private View mView;
     private ImageView mPhotoImageView;
     private TextView mTitleTextView, mDescriptionTextView;
-    private ImageButton mMessageOwnerButton, mCallOwnerButton;
+    private ImageButton mMessageOwnerButton, mCallOwnerButton, mDeleteButton;
     private Button mJoinButton;
     private String mGroupId;
     private Boolean mMember;
@@ -59,6 +60,7 @@ public class GroupProfileFragment extends DialogFragment {
         mPhotoImageView = (ImageView) mView.findViewById(R.id.displayImageView);
         mTitleTextView = (TextView) mView.findViewById(R.id.titleTextView);
         mDescriptionTextView = (TextView) mView.findViewById(R.id.descriptionTextView);
+        mDeleteButton = (ImageButton) mView.findViewById(R.id.deleteImageButton);
         mJoinButton = (Button) mView.findViewById(R.id.joinButton);
         mMessageOwnerButton = (ImageButton) mView.findViewById(R.id.messageOwnerButton);
         mCallOwnerButton = (ImageButton) mView.findViewById(R.id.callOwnerButton);
@@ -68,7 +70,7 @@ public class GroupProfileFragment extends DialogFragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mMember = Boolean.FALSE;
+        mMember = FALSE;
         Bundle bundle = getArguments();
         mGroupId = bundle.getString("groupId");
         mCurrentUser = FirebaseAuth.getInstance().getCurrentUser();
@@ -92,6 +94,18 @@ public class GroupProfileFragment extends DialogFragment {
                 mTitleTextView.setText(group.getTitle());
                 //Set Description
                 mDescriptionTextView.setText(group.getDescription());
+                //Set Delete Button
+                if(mCurrentUser.getUid().equals(group.getOwnerId())) {
+                    mDeleteButton.setVisibility(View.VISIBLE);
+                    mDeleteButton.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            hideGroup(group);
+                            Toast.makeText(getApplicationContext(), "Group deleted successfully!", Toast.LENGTH_LONG).show();
+                            dismiss();
+                        }
+                    });
+                }
                 //Set Message
                 if(group.getOwnerId() == null)
                     mMessageOwnerButton.setVisibility(View.INVISIBLE);
@@ -123,7 +137,7 @@ public class GroupProfileFragment extends DialogFragment {
                 mJoinButton.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        if(mMember == Boolean.FALSE) {
+                        if(mMember == FALSE) {
                             addUserToGroup(mCurrentUser.getUid(), group);
                             Toast.makeText(getApplicationContext(), "Group joined successfully!", Toast.LENGTH_LONG).show();
                         }
@@ -146,7 +160,7 @@ public class GroupProfileFragment extends DialogFragment {
                             mJoinButton.setText("Open");
                         }
                         else
-                            mMember = Boolean.FALSE;
+                            mMember = FALSE;
                     }
                     @Override
                     public void onCancelled(DatabaseError databaseError) { }
@@ -163,8 +177,20 @@ public class GroupProfileFragment extends DialogFragment {
         DatabaseReference chatInfoDbRef = mRootDbRef.child("chats/info").child(group.getChatId());
         Map<String, Object> users = new HashMap<String, Object>();
         users.put(userId, Boolean.TRUE);
-        chatInfoDbRef.child("users").setValue(users);
+        chatInfoDbRef.child("users").updateChildren(users);
         //Insert User Chat
         mRootDbRef.child("chats/user_groups").child(userId).child(group.getId()).setValue(group.getChatId());
+    }
+
+    private void hideGroup(Group group) {
+        //Setting visibility to False
+        Map<String, Object> visibility = new HashMap<>();
+        visibility.put("visible", FALSE);
+        mRootDbRef.child("groups").child(group.getId()).updateChildren(visibility);
+        //Removing location
+        DatabaseReference locationDbRef = mRootDbRef.child("locations/groups").child(group.getId());
+        locationDbRef.setValue(null);
+        //Not removing info from user_group and chat/info. Currently, the group wont be visible in explore,
+        //but the conversation can still continue
     }
 }

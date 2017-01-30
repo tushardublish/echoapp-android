@@ -17,6 +17,8 @@ import android.view.MenuItem;
 import android.widget.Toast;
 
 import com.facebook.FacebookSdk;
+import com.firebase.geofire.GeoFire;
+import com.firebase.geofire.GeoLocation;
 import com.firebase.jobdispatcher.FirebaseJobDispatcher;
 import com.firebase.jobdispatcher.GooglePlayDriver;
 import com.firebase.jobdispatcher.Job;
@@ -138,7 +140,7 @@ public class MainActivity extends AppCompatActivity {
                 mCurrentUser = firebaseAuth.getCurrentUser();
                 if (mCurrentUser != null) {
                     // User is signed in
-                    InitializeUser();
+                    initializeUser();
                 } else {
                     // User is signed out
                     startActivityForResult(
@@ -167,7 +169,8 @@ public class MainActivity extends AppCompatActivity {
                 userMap.put(mCurrentUser.getUid(), userProfile);
                 mUsersDbRef.updateChildren(userMap);
                 Toast.makeText(this, "Signed in!", Toast.LENGTH_SHORT).show();
-                InitializeUser();
+                setDefaultLocation();
+                initializeUser();
             } else if (resultCode == RESULT_CANCELED) {
                 // Sign in was canceled by the user, finish the activity
                 Toast.makeText(this, "Sign in canceled", Toast.LENGTH_SHORT).show();
@@ -176,19 +179,28 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void InitializeUser() {
+    private void initializeUser() {
         FacebookSdk.sdkInitialize(this);
         UserProfile userProfile = new UserProfile(mCurrentUser);
         userProfile.saveFbData(mUsersDbRef);
 
-        InitiateLocationSyncJob();
-        //To update Insatance id for users. Can be removed after 1st Feb 2017.
+        initiateLocationSyncJob();
+        //Update Instance Id
         MyFirebaseInstanceIDService firebaseInstance = new MyFirebaseInstanceIDService();
         String refreshedToken = FirebaseInstanceId.getInstance().getToken();
         firebaseInstance.sendRegistrationToServer(mCurrentUser.getUid(), refreshedToken);
     }
 
-    private void InitiateLocationSyncJob(){
+    // Setting default location to ground zero for new users.
+    // Should be done only on signups and not signins
+    private void setDefaultLocation() {
+        DatabaseReference locationDbRef = mFirebaseDatabase.getReference("locations/current");
+        GeoFire geoFire = new GeoFire(locationDbRef);
+        GeoLocation currentGeoLocation = new GeoLocation(28.529449, 77.366762);
+        geoFire.setLocation(mCurrentUser.getUid(), currentGeoLocation);
+    }
+
+    private void initiateLocationSyncJob(){
         int locationPermission = ContextCompat.checkSelfPermission( this, Manifest.permission.ACCESS_FINE_LOCATION);
         if (mCurrentUser != null && locationPermission == PackageManager.PERMISSION_GRANTED) {
             // Create a new dispatcher using the Google Play driver.
@@ -218,7 +230,7 @@ public class MainActivity extends AppCompatActivity {
                     // don't overwrite an existing job with the same tag
                     .setReplaceCurrent(false)
                     // retry with exponential backoff
-                    .setRetryStrategy(RetryStrategy.DEFAULT_EXPONENTIAL)
+                    .setRetryStrategy(RetryStrategy.DEFAULT_LINEAR)
                     .setExtras(userBundle)
                     .build();
             dispatcher.mustSchedule(recurringJob);
@@ -240,7 +252,7 @@ public class MainActivity extends AppCompatActivity {
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     // permission was granted, yay! Do the
-                    InitiateLocationSyncJob();
+                    initiateLocationSyncJob();
                 } else {
                     // permission denied, boo! Disable the
                     // functionality that depends on this permission.
