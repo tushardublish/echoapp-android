@@ -151,7 +151,10 @@ public class MyServlet extends HttpServlet {
         notification.addProperty("click_action", "in.letsecho.echoapp.CHATINTENT");
         obj.add("notification", notification);
         JsonObject data = new JsonObject();
-        data.addProperty("CHAT_USER", message.getSenderUid());
+        if(message.getGroupId() != null)
+            data.addProperty("CHAT_GROUP", message.getGroupId());
+        else
+            data.addProperty("CHAT_USER", message.getSenderUid());
         obj.add("data", data);
         String postJsonData = obj.toString();
 

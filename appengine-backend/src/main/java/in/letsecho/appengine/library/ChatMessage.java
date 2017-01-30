@@ -1,9 +1,4 @@
-/*
-    Dated: 16th Jan 2017
-    Copied from library, as I was not able to figure out how to import gradle project in maven project.
-    It was required when we use maven commands to build and deploy backend project.
-    Either GCP might soon migrate AppEngine Flexible to gradle soon or we might have to figure out a way later.
-*/
+// Any changes made here needs to be copied to appengine-backend/library
 package in.letsecho.appengine.library;
 
 import java.util.HashMap;
@@ -16,6 +11,7 @@ public class ChatMessage {
     private String photoUrl;
     private Boolean notified;
     private HashMap<String,Boolean> seen;
+    private String groupId;
 
     public ChatMessage() {
         this.seen = new HashMap();
@@ -75,5 +71,13 @@ public class ChatMessage {
 
     public void setSeenForUser(String userId) {
         seen.put(userId, Boolean.TRUE);
+    }
+
+    public String getGroupId() {
+        return groupId;
+    }
+
+    public void setGroupId(String groupId) {
+        this.groupId = groupId;
     }
 }

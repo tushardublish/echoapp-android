@@ -11,6 +11,7 @@ public class ChatMessage {
     private String photoUrl;
     private Boolean notified;
     private HashMap<String,Boolean> seen;
+    private String groupId;
 
     public ChatMessage() {
         this.seen = new HashMap();
@@ -70,5 +71,13 @@ public class ChatMessage {
 
     public void setSeenForUser(String userId) {
         seen.put(userId, Boolean.TRUE);
+    }
+
+    public String getGroupId() {
+        return groupId;
+    }
+
+    public void setGroupId(String groupId) {
+        this.groupId = groupId;
     }
 }

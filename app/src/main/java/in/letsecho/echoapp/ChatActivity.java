@@ -40,6 +40,8 @@ import in.letsecho.echoapp.library.Group;
 import in.letsecho.library.ChatMessage;
 import in.letsecho.echoapp.library.UserProfile;
 
+import static java.lang.Boolean.TRUE;
+
 public class ChatActivity extends AppCompatActivity {
 
     private static final String TAG = "ChatActivity";
@@ -136,6 +138,8 @@ public class ChatActivity extends AppCompatActivity {
                 // TODO: Send messages on click
                 ChatMessage chatMessage = new ChatMessage(mMessageEditText.getText().toString(),
                         mCurrentUser.getDisplayName(), mCurrentUser.getUid(), null, new HashMap());
+                if(mChatType == CHAT_GROUP && mGroupId != null)
+                    chatMessage.setGroupId(mGroupId);
                 mCurrentChatDbRef.push().setValue(chatMessage);
                 // Clear input box
                 mMessageEditText.setText("");
@@ -284,8 +288,8 @@ public class ChatActivity extends AppCompatActivity {
                         //Insert Info
                         DatabaseReference chatInfoDbRef = mChatsDbRef.child("info").push();
                         Map<String, Object> users = new HashMap<String, Object>();
-                        users.put(mCurrentUser.getUid(), Boolean.TRUE);
-                        users.put(mSecondaryUid, Boolean.TRUE);
+                        users.put(mCurrentUser.getUid(), TRUE);
+                        users.put(mSecondaryUid, TRUE);
                         chatInfoDbRef.child("users").setValue(users);
                         //Insert User Chats
                         mChatId = chatInfoDbRef.getKey();
@@ -309,15 +313,16 @@ public class ChatActivity extends AppCompatActivity {
     private ChildEventListener getMessageEventListener() {
         ChildEventListener messageEventListener = new ChildEventListener() {
             @Override
-            public void onChildAdded(DataSnapshot dataSnapshot, String s) {
-                ChatMessage chatMessage = dataSnapshot.getValue(ChatMessage.class);
+            public void onChildAdded(DataSnapshot messageSnapshot, String s) {
+                ChatMessage chatMessage = messageSnapshot.getValue(ChatMessage.class);
                 mMessageAdapter.add(chatMessage);
                 //Mark message as seen
                 String userId = mCurrentUser.getUid();
                 Boolean seen_status = chatMessage.getSeenForUser(userId);
                 if(chatMessage.getSenderUid() != userId && seen_status == Boolean.FALSE){
-                    chatMessage.setSeenForUser(userId);
-                    mCurrentChatDbRef.child(dataSnapshot.getKey()).setValue(chatMessage);
+                    Map<String, Object> user_seen = new HashMap<>();
+                    user_seen.put(userId, TRUE);
+                    mCurrentChatDbRef.child(messageSnapshot.getKey()).child("seen").updateChildren(user_seen);
                 }
             }
             public void onChildChanged(DataSnapshot dataSnapshot, String s) {}
