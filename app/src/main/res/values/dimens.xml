@@ -6,4 +6,5 @@
     <dimen name="data_margin">8dp</dimen>
     <dimen name="user_pic_width">64dp</dimen>
     <dimen name="user_pic_height">64dp</dimen>
+
 </resources>

@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">LetsEcho</string>
     <string name="sign_out">Sign Out</string>
+    <string name="signed_out">Signed Out</string>
     <string name="send_button_label">Send</string>
     <string name="facebook_application_id" translatable="false">1282394848490709</string>
     <!-- Facebook Application ID, prefixed by 'fb'.  Enables Chrome Custom tabs. -->
@@ -10,4 +11,6 @@
     <string name="follow_button">Follow</string>
     <string name="contact_owner_button">Contact Owner</string>
     <string name="create_button">Create</string>
+    <string name="facebook_title_text">Facebook Login</string>
+    <string name="loading">Loading…</string>
 </resources>
