@@ -1,9 +1,15 @@
 package in.letsecho.echoapp;
 
 import android.Manifest;
+import android.app.DialogFragment;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentSender;
 import android.content.pm.PackageManager;
+import android.location.Location;
+import android.location.LocationManager;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.ActivityCompat;
@@ -11,6 +17,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -26,6 +33,17 @@ import com.firebase.jobdispatcher.Lifetime;
 import com.firebase.jobdispatcher.RetryStrategy;
 import com.firebase.jobdispatcher.Trigger;
 import com.firebase.ui.auth.AuthUI;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.PendingResult;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.LocationSettingsResult;
+import com.google.android.gms.location.LocationSettingsStates;
+import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
@@ -39,6 +57,8 @@ import java.util.Map;
 import in.letsecho.echoapp.service.LocationSyncService;
 import in.letsecho.echoapp.library.UserProfile;
 import in.letsecho.echoapp.service.MyFirebaseInstanceIDService;
+
+import static java.lang.Boolean.FALSE;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -202,6 +222,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void initiateLocationSyncJob(){
         int locationPermission = ContextCompat.checkSelfPermission( this, Manifest.permission.ACCESS_FINE_LOCATION);
+        checkEnableGPS();
         if (mCurrentUser != null && locationPermission == PackageManager.PERMISSION_GRANTED) {
             // Create a new dispatcher using the Google Play driver.
             FirebaseJobDispatcher dispatcher = new FirebaseJobDispatcher(new GooglePlayDriver(this));
@@ -234,6 +255,15 @@ public class MainActivity extends AppCompatActivity {
                     .setExtras(userBundle)
                     .build();
             dispatcher.mustSchedule(recurringJob);
+        }
+    }
+
+    private void checkEnableGPS() {
+        LocationManager locationManager = (LocationManager)this.getSystemService(Context.LOCATION_SERVICE);
+        boolean GpsStatus = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+        if(GpsStatus == FALSE){
+            GPSFragment gpsFragment = new GPSFragment();
+            gpsFragment.show(getSupportFragmentManager(), "gps");
         }
     }
 

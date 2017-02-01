@@ -13,4 +13,7 @@
     <string name="create_button">Create</string>
     <string name="facebook_title_text">Facebook Login</string>
     <string name="loading">Loading…</string>
+    <string name="gps_message">Bummer! Looks like your GPS is turned off.</string>
+    <string name="gps_on_button">Turn On</string>
+    <string name="cancel_button">Cancel</string>
 </resources>
