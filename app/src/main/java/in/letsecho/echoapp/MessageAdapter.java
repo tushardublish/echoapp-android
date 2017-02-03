@@ -7,6 +7,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
@@ -14,6 +15,8 @@ import com.bumptech.glide.Glide;
 import java.util.List;
 
 import in.letsecho.library.ChatMessage;
+
+import static in.letsecho.echoapp.R.drawable.text_bg_grey;
 
 public class MessageAdapter extends ArrayAdapter<ChatMessage> {
     private String userId;
@@ -27,35 +30,41 @@ public class MessageAdapter extends ArrayAdapter<ChatMessage> {
         if (convertView == null) {
             convertView = ((Activity) getContext()).getLayoutInflater().inflate(R.layout.item_message, parent, false);
         }
-
+        LinearLayout messageLayout = (LinearLayout)convertView.findViewById(R.id.messageLinearLayout);
+        LinearLayout.LayoutParams layoutParams = (LinearLayout.LayoutParams)messageLayout.getLayoutParams();
         TextView messageTextView = (TextView) convertView.findViewById(R.id.messageTextView);
         TextView authorTextView = (TextView) convertView.findViewById(R.id.nameTextView);
         ImageView photoImageView = (ImageView) convertView.findViewById(R.id.photoImageView);
 
         ChatMessage message = getItem(position);
         boolean isPhoto = message.getPhotoUrl() != null;
+        //Set Photo
         if (isPhoto) {
-            messageTextView.setVisibility(View.GONE);
             photoImageView.setVisibility(View.VISIBLE);
+            messageLayout.setVisibility(View.GONE);
             Glide.with(photoImageView.getContext())
                     .load(message.getPhotoUrl())
                     .into(photoImageView);
         } else {
-            messageTextView.setVisibility(View.VISIBLE);
             photoImageView.setVisibility(View.GONE);
+            messageLayout.setVisibility(View.VISIBLE);
             messageTextView.setText(message.getText());
         }
-        authorTextView.setVisibility(View.VISIBLE);
+        //Set Alignment
         authorTextView.setText(message.getName());
-
-        // For text alignment of sender and other people
         if(message.getSenderUid()!=null && message.getSenderUid().equals(userId)) {
-            messageTextView.setGravity(Gravity.END);
+            messageLayout.setBackgroundResource(R.drawable.text_bg_grey);
+            layoutParams.gravity = Gravity.END;
             authorTextView.setGravity(Gravity.END);
         } else {
-            messageTextView.setGravity(Gravity.START);
+            messageLayout.setBackgroundResource(R.drawable.text_bg_blue);
+            layoutParams.gravity = Gravity.START;
             authorTextView.setGravity(Gravity.START);
         }
+        //setBackgroundResource resets padding, so this statement is required to apply gravity
+        messageLayout.setPadding(10,10,10,10);
+        messageLayout.setGravity(Gravity.CENTER_VERTICAL);
+
         return convertView;
     }
 

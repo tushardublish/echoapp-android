@@ -1,9 +1,12 @@
 package in.letsecho.echoapp;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.v4.graphics.drawable.RoundedBitmapDrawable;
+import android.support.v4.graphics.drawable.RoundedBitmapDrawableFactory;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.Editable;
@@ -13,10 +16,13 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.target.BitmapImageViewTarget;
 import com.firebase.ui.auth.AuthUI;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
@@ -40,6 +46,7 @@ import in.letsecho.echoapp.library.Group;
 import in.letsecho.library.ChatMessage;
 import in.letsecho.echoapp.library.UserProfile;
 
+import static in.letsecho.echoapp.R.id.photoImageView;
 import static java.lang.Boolean.TRUE;
 
 public class ChatActivity extends AppCompatActivity {
