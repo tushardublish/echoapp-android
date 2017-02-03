@@ -108,6 +108,15 @@ public class UserProfile {
                                 Map newMap = new HashMap();
                                 Map map = JsonToMap.convert(object);
                                 newMap.put("id", map.get("id"));
+                                //Picture
+                                if(map.containsKey("picture")) {
+                                    Map picture = (Map)map.get("picture");
+                                    Map data = (Map)picture.get("data");
+                                    String photoUrl = (String)data.get("url");
+                                    Map<String, Object> urlObj = new HashMap();
+                                    urlObj.put("photoUrl", photoUrl);
+                                    usersDbRef.child(uid).updateChildren(urlObj);
+                                }
                                 //Work
                                 List<FbWork> newWorkList = new ArrayList<>();
                                 if(map.containsKey("work")) {
@@ -133,7 +142,7 @@ public class UserProfile {
                         }
                     });
             Bundle parameters = new Bundle();
-            parameters.putString("fields", "id, work, education");
+            parameters.putString("fields", "id, picture.type(large), work, education");
             request.setParameters(parameters);
             request.executeAsync();
         }

@@ -126,6 +126,9 @@ public class ExploreFragment extends Fragment {
         if(mCurrentUser != null) {
             attachDatabaseReadListener();
         }
+        // Explanding the lists
+        for(int i=0; i<mExploreAdapter.getGroupCount(); i++)
+            mExploreListView.expandGroup(i);
     }
 
     @Override
