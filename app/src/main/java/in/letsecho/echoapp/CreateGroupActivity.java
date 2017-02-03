@@ -10,6 +10,8 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -39,6 +41,7 @@ public class CreateGroupActivity extends AppCompatActivity {
     private GeoLocation mCurrentLocation;
     private EditText mTitle, mDescription, mPhoneNo;
     private Button mCreateButton;
+    private RadioGroup mTypeRadioGroup;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,6 +58,7 @@ public class CreateGroupActivity extends AppCompatActivity {
         //View
         mTitle = (EditText) findViewById(R.id.titleText);
         mDescription = (EditText) findViewById(R.id.descriptionText);
+        mTypeRadioGroup = (RadioGroup) findViewById(R.id.typeRadioGroup);
         mPhoneNo = (EditText) findViewById(R.id.phoneNoText);
         mCreateButton = (Button) findViewById(R.id.createButton);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -70,7 +74,8 @@ public class CreateGroupActivity extends AppCompatActivity {
                 String phoneNo = mPhoneNo.getText().toString();
                 String ownerId = mCurrentUser.getUid();
                 String ownerName = mCurrentUser.getDisplayName();
-                Group newGroup = new Group(title, description, ownerId, ownerName, phoneNo);
+                String type = getGroupType();
+                Group newGroup = new Group(title, description, ownerId, ownerName, phoneNo, type);
                 DatabaseReference groupDbRef = mRootDbRef.child("groups").push();
                 String groupId = groupDbRef.getKey();
                 newGroup.setId(groupId);
@@ -84,6 +89,13 @@ public class CreateGroupActivity extends AppCompatActivity {
                 finish();
             }
         });
+    }
+
+    private String getGroupType() {
+        int selectedId = mTypeRadioGroup.getCheckedRadioButtonId();
+        RadioButton selectedButton = (RadioButton) findViewById(selectedId);
+        String type = selectedButton.getText().toString();
+        return type;
     }
 
     private String setGroupChat(String groupId) {

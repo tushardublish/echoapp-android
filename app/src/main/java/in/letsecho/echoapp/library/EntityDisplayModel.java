@@ -50,6 +50,7 @@ public class EntityDisplayModel {
         this.title = group.getTitle();
         //Setting photo url from our FB Page Profile Picture
         this.photoUrl = "https://scontent-amt2-1.xx.fbcdn.net/v/t1.0-9/16174591_1806158246288972_6479255994666804126_n.jpg?oh=0eb82bd852ee72ce7b8919dc2877b94d&oe=592167E2";
+        this.rightAlignedInfo = group.getType();
         this.type = GROUP_TYPE;
     }
 

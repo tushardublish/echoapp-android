@@ -41,7 +41,7 @@ import static in.letsecho.echoapp.library.EntityDisplayModel.USER_TYPE;
 
 public class ExploreFragment extends Fragment {
     private static String TAG = "ExploreFragment";
-    private static String HEADER1 = "Nearby Groups";
+    private static String HEADER1 = "Nearby Posts";
     private static String HEADER2 = "Nearby People";
     private static String HEADER3 = "People near you in last 24 hours";
     private static final String NEARBY_DISTANCE_CONFIG_KEY = "nearby_distance";

@@ -12,16 +12,18 @@ public class Group {
     private String ownerId;
     private String ownerName;
     private String phoneNo;
+    private String type;
     private boolean visible;
 
     public Group() {}
 
-    public Group(String title, String description, String ownerId, String ownerName, String phoneNo) {
+    public Group(String title, String description, String ownerId, String ownerName, String phoneNo, String type) {
         this.title = title;
         this.description = description;
         this.ownerId = ownerId;
         this.ownerName = ownerName;
         this.phoneNo = phoneNo;
+        this.type = type;
         this.visible = TRUE;
     }
 
@@ -79,6 +81,14 @@ public class Group {
 
     public void setPhoneNo(String phoneNo) {
         this.phoneNo = phoneNo;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 
     public boolean isVisible() {

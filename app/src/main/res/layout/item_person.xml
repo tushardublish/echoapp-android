@@ -18,20 +18,26 @@
         android:id="@+id/nameTextView"
         android:layout_width="wrap_content"
         android:layout_height="@dimen/user_pic_height"
-        android:layout_weight="0"
         android:textAppearance="@android:style/TextAppearance.Medium"
         tools:text="Name"
         android:gravity="center_vertical"
         android:layout_marginLeft="10dp" />
 
+    <Space
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_weight="1" />
+
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/rightNumberTextView"
-        android:layout_weight="1"
         android:visibility="invisible"
         android:text=""
         android:textAppearance="@android:style/TextAppearance.Small"
-        android:textAlignment="textEnd" />
+        android:textAlignment="textEnd"
+        android:gravity="end"
+        android:paddingStart="5dp"
+        android:paddingEnd="5dp" />
 
 </LinearLayout>

@@ -2,6 +2,7 @@ package in.letsecho.echoapp;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawable;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawableFactory;
 import android.view.LayoutInflater;
@@ -20,7 +21,8 @@ import java.util.List;
 
 import in.letsecho.echoapp.library.EntityDisplayModel;
 
-import static in.letsecho.echoapp.R.id.imageView;
+import static android.R.color.white;
+import static in.letsecho.echoapp.library.EntityDisplayModel.GROUP_TYPE;
 
 public class PersonAdapterExpandableList extends BaseExpandableListAdapter{
 
@@ -50,11 +52,12 @@ public class PersonAdapterExpandableList extends BaseExpandableListAdapter{
     public View getChildView(int groupPosition, final int childPosition,
                              boolean isLastChild, View convertView, ViewGroup parent) {
 
-        if (convertView == null) {
-            LayoutInflater infalInflater = (LayoutInflater) this._context
-                    .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-            convertView = infalInflater.inflate(R.layout.item_person, parent, false);
-        }
+        // This disable recycler view and every time a new view is fetched.
+        // Recycler view was giving issues because previous item properties were retained
+        // if (convertView == null) {
+        LayoutInflater infalInflater = (LayoutInflater) this._context
+                .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        convertView = infalInflater.inflate(R.layout.item_person, parent, false);
 
         final ImageView photoImageView = (ImageView) convertView.findViewById(R.id.displayImageView);
         TextView nameTextView = (TextView) convertView.findViewById(R.id.nameTextView);
@@ -77,10 +80,21 @@ public class PersonAdapterExpandableList extends BaseExpandableListAdapter{
                     }
             });
         }
+        // Set right aligned info
         if(entity.getRightAlignedInfo() != null) {
             rightAlignedInfo.setText(entity.getRightAlignedInfo());
             rightAlignedInfo.setVisibility(View.VISIBLE);
+            if(entity.getType() == GROUP_TYPE && entity.getRightAlignedInfo()
+                    .equals(_context.getString(R.string.group_type_service))) {
+                rightAlignedInfo.setBackgroundResource(R.drawable.bg_light_blue);
+                rightAlignedInfo.setTextColor(ContextCompat.getColor(_context, white));
+            } else if(entity.getType() == GROUP_TYPE && entity.getRightAlignedInfo()
+                    .equals(_context.getString(R.string.group_type_group))) {
+                rightAlignedInfo.setBackgroundResource(R.drawable.bg_light_green);
+                rightAlignedInfo.setTextColor(ContextCompat.getColor(_context, white));
+            }
         }
+
         return convertView;
     }
 

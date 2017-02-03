@@ -16,4 +16,6 @@
     <string name="gps_message">Bummer! Looks like your GPS is turned off.</string>
     <string name="gps_on_button">Turn On</string>
     <string name="cancel_button">Cancel</string>
+    <string name="group_type_service">Service</string>
+    <string name="group_type_group">Group</string>
 </resources>
