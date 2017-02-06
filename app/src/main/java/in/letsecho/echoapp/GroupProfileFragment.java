@@ -28,6 +28,7 @@ import com.google.firebase.database.ValueEventListener;
 import java.util.HashMap;
 import java.util.Map;
 
+import in.letsecho.echoapp.library.Admin;
 import in.letsecho.echoapp.library.FbEducation;
 import in.letsecho.echoapp.library.FbWork;
 import in.letsecho.echoapp.library.Group;
@@ -42,7 +43,7 @@ public class GroupProfileFragment extends DialogFragment {
     private FirebaseUser mCurrentUser;
     private View mView;
     private ImageView mPhotoImageView;
-    private TextView mTitleTextView, mDescriptionTextView;
+    private TextView mTitleTextView, mOwnerTextView, mDescriptionTextView;
     private ImageButton mMessageOwnerButton, mCallOwnerButton, mDeleteButton;
     private Button mJoinButton;
     private String mGroupId;
@@ -59,6 +60,7 @@ public class GroupProfileFragment extends DialogFragment {
         // Get mView items
         mPhotoImageView = (ImageView) mView.findViewById(R.id.displayImageView);
         mTitleTextView = (TextView) mView.findViewById(R.id.titleTextView);
+        mOwnerTextView = (TextView) mView.findViewById(R.id.ownerTextView);
         mDescriptionTextView = (TextView) mView.findViewById(R.id.descriptionTextView);
         mDeleteButton = (ImageButton) mView.findViewById(R.id.deleteImageButton);
         mJoinButton = (Button) mView.findViewById(R.id.joinButton);
@@ -92,10 +94,15 @@ public class GroupProfileFragment extends DialogFragment {
                 mPhotoImageView.setMaxHeight(max_image_size);
                 //Set Name
                 mTitleTextView.setText(group.getTitle());
+                //Set Owner Name
+                if(group.getOwnerName() != null)
+                    mOwnerTextView.setText("Owner: " + group.getOwnerName());
+                else
+                    mOwnerTextView.setVisibility(View.GONE);
                 //Set Description
                 mDescriptionTextView.setText(group.getDescription());
                 //Set Delete Button
-                if(mCurrentUser.getUid().equals(group.getOwnerId())) {
+                if(mCurrentUser.getUid().equals(group.getOwnerId()) || Admin.isAdmin(mCurrentUser.getUid())) {
                     mDeleteButton.setVisibility(View.VISIBLE);
                     mDeleteButton.setOnClickListener(new View.OnClickListener() {
                         @Override
@@ -107,17 +114,18 @@ public class GroupProfileFragment extends DialogFragment {
                     });
                 }
                 //Set Message
-                if(group.getOwnerId() == null)
-                    mMessageOwnerButton.setVisibility(View.INVISIBLE);
-                else {
+                if(group.getOwnerId() != null) {
                     mMessageOwnerButton.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
                             Intent chatIntent = new Intent(getActivity().getApplicationContext(), ChatActivity.class)
-                                    .putExtra("CHAT_USER", group.getOwnerId());
+                                    .putExtra("CHAT_USER", group.getOwnerId())
+                                    .putExtra("TITLE", group.getOwnerName());
                             startActivity(chatIntent);
                         }
                     });
+                } else {
+                    mMessageOwnerButton.setVisibility(View.INVISIBLE);
                 }
                 //Set Phone No
                 if(group.getPhoneNo() == null)
@@ -142,7 +150,8 @@ public class GroupProfileFragment extends DialogFragment {
                             Toast.makeText(getApplicationContext(), "Following Group Conversation", Toast.LENGTH_LONG).show();
                         }
                         Intent chatIntent = new Intent(getActivity().getApplicationContext(), ChatActivity.class)
-                                .putExtra("CHAT_GROUP", group.getId());
+                                .putExtra("CHAT_GROUP", group.getId())
+                                .putExtra("TITLE", group.getTitle());
                         startActivity(chatIntent);
                     }
                 });

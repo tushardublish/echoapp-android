@@ -165,16 +165,19 @@ public class ChatActivity extends AppCompatActivity {
 
         // Initialize Intent
         Intent intent = getIntent();
-        if (intent != null && intent.hasExtra("CHAT_USER")) {
-            mChatType = CHAT_USER;
-            mSecondaryUid = intent.getStringExtra("CHAT_USER");
-            mOtherEntityDbRef = mFirebaseDatabase.getReference().child("users").child(mSecondaryUid);
-        } else if(intent != null && intent.hasExtra("CHAT_GROUP")) {
-            mChatType = CHAT_GROUP;
-            mGroupId = intent.getStringExtra("CHAT_GROUP");
-            mOtherEntityDbRef = mFirebaseDatabase.getReference().child("groups").child(mGroupId);
-        }
-        else {
+        if (intent != null) {
+            if(intent.hasExtra("CHAT_USER")) {
+                mChatType = CHAT_USER;
+                mSecondaryUid = intent.getStringExtra("CHAT_USER");
+                mOtherEntityDbRef = mFirebaseDatabase.getReference().child("users").child(mSecondaryUid);
+            } else if(intent.hasExtra("CHAT_GROUP")) {
+                mChatType = CHAT_GROUP;
+                mGroupId = intent.getStringExtra("CHAT_GROUP");
+                mOtherEntityDbRef = mFirebaseDatabase.getReference().child("groups").child(mGroupId);
+            }
+            if(intent.hasExtra("TITLE"))
+                mToolbar.setTitle(intent.getStringExtra("TITLE"));
+        } else {
             Intent mainIntent = new Intent(this.getApplicationContext(), MainActivity.class);
             startActivity(mainIntent);
         }
@@ -264,20 +267,20 @@ public class ChatActivity extends AppCompatActivity {
 
     private void attachDatabaseReadListener() {
         //To get secondary user name or group name
-        mOtherEntityDbRef.addListenerForSingleValueEvent( new ValueEventListener() {
-                @Override
-                public void onDataChange(DataSnapshot dataSnapshot) {
-                    if(mChatType == CHAT_USER) {
-                        UserProfile secondaryUser = dataSnapshot.getValue(UserProfile.class);
-                        mToolbar.setTitle(secondaryUser.getName());
-                    } else if(mChatType == CHAT_GROUP) {
-                        Group group = dataSnapshot.getValue(Group.class);
-                        mToolbar.setTitle(group.getTitle());
-                    }
-                };
-                @Override
-                public void onCancelled(DatabaseError databaseError) {};
-            });
+//        mOtherEntityDbRef.addListenerForSingleValueEvent( new ValueEventListener() {
+//                @Override
+//                public void onDataChange(DataSnapshot dataSnapshot) {
+//                    if(mChatType == CHAT_USER) {
+//                        UserProfile secondaryUser = dataSnapshot.getValue(UserProfile.class);
+//                        mToolbar.setTitle(secondaryUser.getName());
+//                    } else if(mChatType == CHAT_GROUP) {
+//                        Group group = dataSnapshot.getValue(Group.class);
+//                        mToolbar.setTitle(group.getTitle());
+//                    }
+//                };
+//                @Override
+//                public void onCancelled(DatabaseError databaseError) {};
+//            });
 
 
         // Get mChatId or create a new chat

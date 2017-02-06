@@ -21,20 +21,17 @@ import android.util.Log;
 import com.facebook.AccessToken;
 import com.facebook.GraphRequest;
 import com.facebook.GraphResponse;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.auth.UserInfo;
 import com.google.firebase.database.DatabaseReference;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 //Putting libraries which use FirebaseUser module in echoapp module.
 // Because the java admin sdk do not support FirebaseUser module currently (11th Jan 2017)
@@ -93,7 +90,7 @@ public class UserProfile {
 
     public String getInstanceId() { return instanceId; }
 
-    public void setInstanceId(String instanceId) { this. instanceId = instanceId; }
+    public void setInstanceId(String instanceId) { this.instanceId = instanceId; }
 
     public void saveFbData(final DatabaseReference usersDbRef) {
         if(AccessToken.getCurrentAccessToken() != null) {

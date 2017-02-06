@@ -36,6 +36,7 @@ public class UserProfileFragment extends DialogFragment {
     private Button mConnectButton;
     private ImageButton mFbButton;
     private String mUserId;
+    private UserProfile secondaryUser;
     private int max_image_size;
 
     @Override
@@ -55,7 +56,8 @@ public class UserProfileFragment extends DialogFragment {
             @Override
             public void onClick(View v) {
                 Intent chatIntent = new Intent(getActivity().getApplicationContext(), ChatActivity.class)
-                        .putExtra("CHAT_USER", mUserId);
+                        .putExtra("CHAT_USER", mUserId)
+                        .putExtra("TITLE", secondaryUser.getName());
                 startActivity(chatIntent);
             }
         });
@@ -75,18 +77,18 @@ public class UserProfileFragment extends DialogFragment {
         mUserProfileDbRef.addListenerForSingleValueEvent((new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot userObj) {
-                UserProfile user = userObj.getValue(UserProfile.class);
+                secondaryUser = userObj.getValue(UserProfile.class);
                 // Set Photo
-                if (user.getPhotoUrl() != null) {
+                if (secondaryUser.getPhotoUrl() != null) {
                     Glide.with(mPhotoImageView.getContext())
-                            .load(user.getPhotoUrl())
+                            .load(secondaryUser.getPhotoUrl())
                             .into(mPhotoImageView);
                 }
                 max_image_size = mView.getWidth();
                 mPhotoImageView.setMaxWidth(max_image_size);
                 mPhotoImageView.setMaxHeight(max_image_size);
                 //Set Name
-                mNameTextView.setText(user.getName());
+                mNameTextView.setText(secondaryUser.getName());
                 // Set Work
                 for(DataSnapshot workObj: userObj.child("fbdata/work").getChildren()) {
                     FbWork work = workObj.getValue(FbWork.class);

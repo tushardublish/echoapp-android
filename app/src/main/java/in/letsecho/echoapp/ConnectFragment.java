@@ -59,12 +59,14 @@ public class ConnectFragment extends Fragment {
                 EntityDisplayModel item = mPersonAdapter.getItem(position);
                 if(item.getType() == USER_TYPE) {
                     Intent intent = new Intent(getActivity().getApplicationContext(), ChatActivity.class)
-                            .putExtra("CHAT_USER", item.getUid());
+                            .putExtra("CHAT_USER", item.getUid())
+                            .putExtra("TITLE", item.getTitle());
                     startActivity(intent);
                 }
                 else if(item.getType() == GROUP_TYPE) {
                     Intent intent = new Intent(getActivity().getApplicationContext(), ChatActivity.class)
-                            .putExtra("CHAT_GROUP", item.getUid());
+                            .putExtra("CHAT_GROUP", item.getUid())
+                            .putExtra("TITLE", item.getTitle());
                     startActivity(intent);
                 }
             }
