@@ -71,7 +71,8 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         NotificationManager notificationManager =
                 (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
-        Random notifyId = new Random(); // Can be used later to update notifications
-        notificationManager.notify(notifyId.nextInt(), notificationBuilder.build());
+        // Used to update notifications
+        int notifyId = message.getNotification().getTitle().toString().hashCode();
+        notificationManager.notify(notifyId, notificationBuilder.build());
     }
 }

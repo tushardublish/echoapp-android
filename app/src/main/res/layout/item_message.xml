@@ -26,7 +26,8 @@
             android:layout_height="wrap_content"
             android:textAppearance="?android:attr/textAppearanceMedium"
             android:layout_marginStart="20dp"
-            android:layout_marginEnd="20dp" />
+            android:layout_marginEnd="20dp"
+            android:textColor="@android:color/primary_text_light" />
 
     </LinearLayout>
 

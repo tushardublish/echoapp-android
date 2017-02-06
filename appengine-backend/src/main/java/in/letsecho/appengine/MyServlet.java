@@ -149,6 +149,11 @@ public class MyServlet extends HttpServlet {
         notification.addProperty("body", message.getText());
         notification.addProperty("sound", "default");
         notification.addProperty("click_action", "in.letsecho.echoapp.CHATINTENT");
+        // tag will replace previous notification
+        if(message.getGroupId() != null)
+            notification.addProperty("tag", message.getGroupId());
+        else
+            notification.addProperty("tag", message.getSenderUid());
         obj.add("notification", notification);
         JsonObject data = new JsonObject();
         if(message.getGroupId() != null)

@@ -139,7 +139,7 @@ public class GroupProfileFragment extends DialogFragment {
                     public void onClick(View v) {
                         if(mMember == FALSE) {
                             addUserToGroup(mCurrentUser.getUid(), group);
-                            Toast.makeText(getApplicationContext(), "Group joined successfully!", Toast.LENGTH_LONG).show();
+                            Toast.makeText(getApplicationContext(), "Following Group Conversation", Toast.LENGTH_LONG).show();
                         }
                         Intent chatIntent = new Intent(getActivity().getApplicationContext(), ChatActivity.class)
                                 .putExtra("CHAT_GROUP", group.getId());
@@ -157,7 +157,7 @@ public class GroupProfileFragment extends DialogFragment {
                         // Checking if the chat exists in groups of the user
                         if(chatId != null) {
                             mMember = Boolean.TRUE;
-                            mJoinButton.setText("Open");
+                            mJoinButton.setText("Enter");
                         }
                         else
                             mMember = FALSE;
