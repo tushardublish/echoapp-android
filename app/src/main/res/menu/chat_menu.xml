@@ -7,4 +7,6 @@
         android:id="@+id/member_list"
         android:title="Members"
         android:visible="false" />
+    <item android:id="@+id/delete_chat"
+        android:title="Disconnect" />
 </menu>

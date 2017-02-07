@@ -68,7 +68,7 @@ public class ChatActivity extends AppCompatActivity {
     private EditText mMessageEditText;
     private Button mSendButton;
     private Toolbar mToolbar;
-    private MenuItem mMembers;
+    private MenuItem mMembers, mDelete;
 
     private FirebaseUser mCurrentUser;
     private String mSecondaryUid, mChatId, mGroupId;
@@ -205,6 +205,8 @@ public class ChatActivity extends AppCompatActivity {
         if(mChatType == CHAT_GROUP) {
             mMembers = menu.findItem(R.id.member_list);
             mMembers.setVisible(TRUE);
+            mDelete = menu.findItem(R.id.delete_chat);
+            mDelete.setTitle("Unfollow");
         }
         return true;
     }
@@ -218,6 +220,13 @@ public class ChatActivity extends AppCompatActivity {
                         .putExtra("GROUP_ID", mGroupId)
                         .putExtra("TITLE", mToolbar.getTitle());
                 startActivity(intent);
+                return true;
+            case R.id.delete_chat:
+                if(mChatType == CHAT_GROUP)
+                    deleteGroupChat();
+                else if(mChatType == CHAT_USER)
+                    deleteUserChat();
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
@@ -382,5 +391,47 @@ public class ChatActivity extends AppCompatActivity {
             mCurrentUserChatDbRef.removeEventListener(mCurrentUserChatsEventListener);
             mCurrentUserChatsEventListener = null;
         }
+    }
+
+    private void deleteGroupChat() {
+        DatabaseReference groupDbRef = mFirebaseDatabase.getReference("groups").child(mGroupId);
+        groupDbRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                Group group = dataSnapshot.getValue(Group.class);
+                // If the user is admin and the group is still visible to others then dont allow
+                if(mCurrentUser.getUid().equals(group.getOwnerId()) && group.isVisible()) {
+                    Toast.makeText(getApplicationContext(), "You are admin of this group. Please delete the group first" +
+                            " then you can delete this conversation.", Toast.LENGTH_LONG).show();
+                } else {
+                    // Remove event listener
+                    mCurrentUserChatDbRef.removeEventListener(mCurrentUserChatsEventListener);
+                    mCurrentUserChatsEventListener = null;
+                    // Delete chat info
+                    mChatsDbRef.child("info").child(mChatId).child("users").child(mCurrentUser.getUid()).removeValue();
+                    // Delete user group
+                    mChatsDbRef.child("user_groups").child(mCurrentUser.getUid()).child(mGroupId).removeValue();
+                    Toast.makeText(getApplicationContext(), "Chat deleted successfully. " +
+                            "You can follow the group again if you are interested.", Toast.LENGTH_LONG).show();
+                    finish();
+                }
+            }
+            @Override
+            public void onCancelled(DatabaseError databaseError) {}
+        });
+    }
+
+    private void deleteUserChat() {
+        // Remove event listener
+        mCurrentUserChatDbRef.removeEventListener(mCurrentUserChatsEventListener);
+        mCurrentUserChatsEventListener = null;
+        // Delete chat info
+        mChatsDbRef.child("info").child(mChatId).removeValue();
+        // Delete user chats for both users
+        mChatsDbRef.child("user_chats").child(mCurrentUser.getUid()).child(mSecondaryUid).removeValue();
+        mChatsDbRef.child("user_chats").child(mSecondaryUid).child(mCurrentUser.getUid()).removeValue();
+        Toast.makeText(getApplicationContext(), "Chat deleted successfully. " +
+                "You can connect again with the person if you are interested.", Toast.LENGTH_LONG).show();
+        finish();
     }
 }
