@@ -4,7 +4,7 @@
     <item android:title="New Group"
         android:id="@+id/new_group"
         app:showAsAction="always"
-        android:icon="@android:drawable/ic_input_add"/>
+        android:icon="@drawable/ic_add_location_white_24dp"/>
     <item
         android:id="@+id/sign_out_menu"
         android:title="@string/sign_out"

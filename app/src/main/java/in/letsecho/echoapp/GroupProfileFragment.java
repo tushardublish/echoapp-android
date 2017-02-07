@@ -87,6 +87,8 @@ public class GroupProfileFragment extends DialogFragment {
                 final Group group = groupObj.getValue(Group.class);
                 // Set Photo
                 String photoUrl = "https://scontent-amt2-1.xx.fbcdn.net/v/t1.0-9/16174591_1806158246288972_6479255994666804126_n.jpg?oh=0eb82bd852ee72ce7b8919dc2877b94d&oe=592167E2";
+                if(group.getPhotoUrl() != null)
+                    photoUrl = group.getPhotoUrl();
                 Glide.with(mPhotoImageView.getContext())
                         .load(photoUrl)
                         .into(mPhotoImageView);
