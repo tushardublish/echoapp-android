@@ -38,19 +38,21 @@ import in.letsecho.echoapp.library.UserProfile;
 
 import static in.letsecho.echoapp.library.EntityDisplayModel.GROUP_TYPE;
 import static in.letsecho.echoapp.library.EntityDisplayModel.USER_TYPE;
+import static in.letsecho.echoapp.library.Group.SERVICE_TYPE;
 
 public class ExploreFragment extends Fragment {
     private static String TAG = "ExploreFragment";
-    private static String HEADER1 = "Nearby Posts";
-    private static String HEADER2 = "Nearby People";
-    private static String HEADER3 = "People near you in last 24 hours";
+    private static String HEADER1 = "Nearby Groups";
+    private static String HEADER2 = "Nearby Services";
+    private static String HEADER3 = "Nearby People";
+    private static String HEADER4 = "People near you in last 24 hours";
     private static final String NEARBY_DISTANCE_CONFIG_KEY = "nearby_distance";
     private static long HOURS_TO_MILLI_SECS = 60*60*1000;
     private ExpandableListView mExploreListView;
     private PersonAdapterExpandableList mExploreAdapter;
     private ProgressBar mProgressBar;
     private List<String> mSectionHeaders;
-    private List<EntityDisplayModel> mCurrentPeople, mPastPeople, mGroups;
+    private List<EntityDisplayModel> mCurrentPeople, mPastPeople, mGroups, mServices;
     private HashMap<String, List<EntityDisplayModel>> mExpandableList;
     private double mNearbyDistance; //(Km)
 
@@ -106,16 +108,19 @@ public class ExploreFragment extends Fragment {
 
     private void setupExpandableList() {
         mGroups = new ArrayList<>();
+        mServices = new ArrayList<>();
         mCurrentPeople = new ArrayList<>();
         mPastPeople = new ArrayList<>();
         mSectionHeaders = new ArrayList<>();
         mSectionHeaders.add(HEADER1);
         mSectionHeaders.add(HEADER2);
         mSectionHeaders.add(HEADER3);
+        mSectionHeaders.add(HEADER4);
         mExpandableList = new HashMap<>();
         mExpandableList.put(HEADER1, mGroups);
-        mExpandableList.put(HEADER2, mCurrentPeople);
-        mExpandableList.put(HEADER3, mPastPeople);
+        mExpandableList.put(HEADER2, mServices);
+        mExpandableList.put(HEADER3, mCurrentPeople);
+        mExpandableList.put(HEADER4, mPastPeople);
         mExploreAdapter = new PersonAdapterExpandableList(this.getContext(), mSectionHeaders, mExpandableList);
     }
 
@@ -135,6 +140,7 @@ public class ExploreFragment extends Fragment {
     public void onPause() {
         super.onPause();
         mGroups.clear();
+        mServices.clear();
         mCurrentPeople.clear();
         mPastPeople.clear();
         mExploreAdapter.notifyDataSetChanged();
@@ -152,9 +158,12 @@ public class ExploreFragment extends Fragment {
                         profile = mGroups.get(childPosition);
                         break;
                     case 1:
-                        profile = mCurrentPeople.get(childPosition);
+                        profile = mServices.get(childPosition);
                         break;
                     case 2:
+                        profile = mCurrentPeople.get(childPosition);
+                        break;
+                    case 3:
                         profile = mPastPeople.get(childPosition);
                         break;
                 }
@@ -290,8 +299,11 @@ public class ExploreFragment extends Fragment {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 Group group = dataSnapshot.getValue(Group.class);
-                EntityDisplayModel displayUser = new EntityDisplayModel(group);
-                mGroups.add(displayUser);
+                EntityDisplayModel displayGroup = new EntityDisplayModel(group);
+                if(group.getType().equals(SERVICE_TYPE))
+                    mServices.add(displayGroup);
+                else
+                    mGroups.add(displayGroup);
                 mExploreAdapter.notifyDataSetChanged();
             }
             @Override
@@ -337,9 +349,19 @@ public class ExploreFragment extends Fragment {
 
     private void removeGroupFromList(String groupId) {
         int index = EntityDisplayModel.findProfileOnUid(mGroups, groupId);
-        EntityDisplayModel removedGroup = mGroups.get(index);
-        mGroups.remove(removedGroup);
-        mExploreAdapter.notifyDataSetChanged();
+        if(index >= 0) {
+            EntityDisplayModel removedGroup = mGroups.get(index);
+            mGroups.remove(removedGroup);
+            mExploreAdapter.notifyDataSetChanged();
+            return;
+        }
+        index = EntityDisplayModel.findProfileOnUid(mServices, groupId);
+        if(index >= 0) {
+            EntityDisplayModel removedGroup = mServices.get(index);
+            mServices.remove(removedGroup);
+            mExploreAdapter.notifyDataSetChanged();
+            return;
+        }
     }
 
     private void removeUserFromCurrentList(String secondaryUserId) {

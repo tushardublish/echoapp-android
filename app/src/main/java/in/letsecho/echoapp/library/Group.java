@@ -5,6 +5,8 @@ import com.firebase.geofire.GeoLocation;
 import static java.lang.Boolean.TRUE;
 
 public class Group {
+    public static String GROUP_TYPE = "Group";
+    public static String SERVICE_TYPE = "Service";
     private String id;
     private String chatId;
     private String title;

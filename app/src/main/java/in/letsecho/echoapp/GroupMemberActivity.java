@@ -96,6 +96,7 @@ public class GroupMemberActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
+            // Up button has to be handled separately
             case android.R.id.home:
                 Intent intent = new Intent(this.getApplicationContext(), ChatActivity.class)
                         .putExtra("CHAT_GROUP", mGroupId)
