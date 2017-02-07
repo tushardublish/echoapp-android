@@ -12,6 +12,9 @@ import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.InputFilter;
 import android.text.TextWatcher;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -65,6 +68,7 @@ public class ChatActivity extends AppCompatActivity {
     private EditText mMessageEditText;
     private Button mSendButton;
     private Toolbar mToolbar;
+    private MenuItem mMembers;
 
     private FirebaseUser mCurrentUser;
     private String mSecondaryUid, mChatId, mGroupId;
@@ -192,6 +196,31 @@ public class ChatActivity extends AppCompatActivity {
         }
         mMessageAdapter.clear();
         detachDatabaseReadListener();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.chat_menu, menu);
+        if(mChatType == CHAT_GROUP) {
+            mMembers = menu.findItem(R.id.member_list);
+            mMembers.setVisible(TRUE);
+        }
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.member_list:
+                Intent intent = new Intent(this, GroupMemberActivity.class)
+                        .putExtra("CHAT_ID", mChatId)
+                        .putExtra("GROUP_ID", mGroupId)
+                        .putExtra("TITLE", mToolbar.getTitle());
+                startActivity(intent);
+            default:
+                return super.onOptionsItemSelected(item);
+        }
     }
 
     private FirebaseAuth.AuthStateListener getAuthStateListener() {

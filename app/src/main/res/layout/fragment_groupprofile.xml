@@ -24,7 +24,7 @@
 
         <TextView
             android:id="@+id/titleTextView"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textAppearance="@android:style/TextAppearance.Medium"
             android:layout_row="0" />
@@ -41,10 +41,17 @@
 
         <TextView
             android:id="@+id/ownerTextView"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textAppearance="@android:style/TextAppearance.Small"
             android:layout_row="1"/>
+
+        <TextView
+            android:id="@+id/membersTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_row="1"
+            android:layout_gravity="end"/>
 
         <TextView
             android:id="@+id/descriptionTextView"

@@ -13,18 +13,17 @@
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <activity android:name=".FacebookLoginActivity">
-        </activity>
-
+        <activity android:name=".FacebookLoginActivity"></activity>
         <activity
             android:name=".ChatActivity"
             android:parentActivityName=".MainActivity">
             <intent-filter>
                 <action android:name="in.letsecho.echoapp.CHATINTENT" />
+
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
@@ -55,6 +54,9 @@
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="in.letsecho.echoapp.MainActivity" />
+        </activity>
+        <activity
+            android:name=".GroupMemberActivity">
         </activity>
     </application>
 

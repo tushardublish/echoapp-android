@@ -43,7 +43,7 @@ public class GroupProfileFragment extends DialogFragment {
     private FirebaseUser mCurrentUser;
     private View mView;
     private ImageView mPhotoImageView;
-    private TextView mTitleTextView, mOwnerTextView, mDescriptionTextView;
+    private TextView mTitleTextView, mOwnerTextView, mMemberTextView, mDescriptionTextView;
     private ImageButton mMessageOwnerButton, mCallOwnerButton, mDeleteButton;
     private Button mJoinButton;
     private String mGroupId;
@@ -61,6 +61,7 @@ public class GroupProfileFragment extends DialogFragment {
         mPhotoImageView = (ImageView) mView.findViewById(R.id.displayImageView);
         mTitleTextView = (TextView) mView.findViewById(R.id.titleTextView);
         mOwnerTextView = (TextView) mView.findViewById(R.id.ownerTextView);
+        mMemberTextView = (TextView) mView.findViewById(R.id.membersTextView);
         mDescriptionTextView = (TextView) mView.findViewById(R.id.descriptionTextView);
         mDeleteButton = (ImageButton) mView.findViewById(R.id.deleteImageButton);
         mJoinButton = (Button) mView.findViewById(R.id.joinButton);
@@ -101,6 +102,8 @@ public class GroupProfileFragment extends DialogFragment {
                     mOwnerTextView.setVisibility(View.GONE);
                 //Set Description
                 mDescriptionTextView.setText(group.getDescription());
+                //Set Member Count
+                setMemberCount(group.getChatId());
                 //Set Delete Button
                 if(mCurrentUser.getUid().equals(group.getOwnerId()) || Admin.isAdmin(mCurrentUser.getUid())) {
                     mDeleteButton.setVisibility(View.VISIBLE);
@@ -201,5 +204,18 @@ public class GroupProfileFragment extends DialogFragment {
         locationDbRef.setValue(null);
         //Not removing info from user_group and chat/info. Currently, the group wont be visible in explore,
         //but the conversation can still continue
+    }
+
+    private void setMemberCount(String chatId) {
+        DatabaseReference membersDbRef = mRootDbRef.child("chats/info").child(chatId).child("users");
+        membersDbRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                Long memberCount = dataSnapshot.getChildrenCount();
+                mMemberTextView.setText(memberCount.toString() + " Members");
+            }
+            @Override
+            public void onCancelled(DatabaseError databaseError) { }
+        });
     }
 }
