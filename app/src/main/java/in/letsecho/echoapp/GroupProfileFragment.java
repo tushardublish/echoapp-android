@@ -44,7 +44,7 @@ public class GroupProfileFragment extends DialogFragment {
     private View mView;
     private ImageView mPhotoImageView;
     private TextView mTitleTextView, mOwnerTextView, mMemberTextView, mDescriptionTextView;
-    private ImageButton mMessageOwnerButton, mCallOwnerButton, mDeleteButton;
+    private ImageButton mMessageOwnerButton, mCallOwnerButton, mEditButton, mDeleteButton;
     private Button mJoinButton;
     private String mGroupId;
     private Boolean mMember;
@@ -63,6 +63,7 @@ public class GroupProfileFragment extends DialogFragment {
         mOwnerTextView = (TextView) mView.findViewById(R.id.ownerTextView);
         mMemberTextView = (TextView) mView.findViewById(R.id.membersTextView);
         mDescriptionTextView = (TextView) mView.findViewById(R.id.descriptionTextView);
+        mEditButton = (ImageButton) mView.findViewById(R.id.editImageButton);
         mDeleteButton = (ImageButton) mView.findViewById(R.id.deleteImageButton);
         mJoinButton = (Button) mView.findViewById(R.id.joinButton);
         mMessageOwnerButton = (ImageButton) mView.findViewById(R.id.messageOwnerButton);
@@ -106,6 +107,19 @@ public class GroupProfileFragment extends DialogFragment {
                 mDescriptionTextView.setText(group.getDescription());
                 //Set Member Count
                 setMemberCount(group.getChatId());
+                //Set Edit Button
+                if(mCurrentUser.getUid().equals(group.getOwnerId()) || Admin.isAdmin(mCurrentUser.getUid())) {
+                    mEditButton.setVisibility(View.VISIBLE);
+                    mEditButton.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            Intent editIntent = new Intent(getActivity().getApplicationContext(), CreateGroupActivity.class)
+                                    .putExtra("GROUP_ID", group.getId());
+                            startActivity(editIntent);
+                            dismiss();
+                        }
+                    });
+                }
                 //Set Delete Button
                 if(mCurrentUser.getUid().equals(group.getOwnerId()) || Admin.isAdmin(mCurrentUser.getUid())) {
                     mDeleteButton.setVisibility(View.VISIBLE);

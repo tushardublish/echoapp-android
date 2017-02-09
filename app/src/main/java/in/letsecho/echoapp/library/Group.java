@@ -1,6 +1,10 @@
 package in.letsecho.echoapp.library;
 
 import com.firebase.geofire.GeoLocation;
+import com.google.firebase.database.Exclude;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import static java.lang.Boolean.TRUE;
 
@@ -30,6 +34,20 @@ public class Group {
         this.photoUrl = photoUrl;
         this.type = type;
         this.visible = TRUE;
+    }
+
+    @Exclude
+    public Map<String, Object> toMap() {
+        HashMap<String, Object> groupMap = new HashMap<>();
+        groupMap.put("title", title);
+        groupMap.put("description", description);
+        groupMap.put("ownerId", ownerId);
+        groupMap.put("ownerName", ownerName);
+        groupMap.put("phoneNo", phoneNo);
+        groupMap.put("photoUrl", photoUrl);
+        groupMap.put("type", type);
+        groupMap.put("visible", visible);
+        return groupMap;
     }
 
     public String getId() {

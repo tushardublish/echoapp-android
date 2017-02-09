@@ -11,6 +11,7 @@
     <string name="follow_button">Follow</string>
     <string name="contact_owner_button">Contact Owner</string>
     <string name="create_button">Create</string>
+    <string name="update_button">Update</string>
     <string name="facebook_title_text">Facebook Login</string>
     <string name="loading">Loading…</string>
     <string name="gps_message">Bummer! Looks like your GPS is turned off.</string>

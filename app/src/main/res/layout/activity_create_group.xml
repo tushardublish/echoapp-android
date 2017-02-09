@@ -137,6 +137,15 @@
                 android:id="@+id/createButton"
                 android:layout_marginTop="16dp"
                 android:layout_gravity="bottom|end" />
+
+            <Button
+                android:text="@string/update_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/updateButton"
+                android:layout_marginTop="16dp"
+                android:layout_gravity="bottom|end"
+                android:visibility="gone" />
         </LinearLayout>
     </ScrollView>
 </RelativeLayout>

@@ -32,6 +32,7 @@ import com.google.firebase.storage.UploadTask;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import in.letsecho.echoapp.library.Group;
 
@@ -39,6 +40,7 @@ public class CreateGroupActivity extends AppCompatActivity {
 
     private static final int RC_PHOTO_PICKER =  1;
     private String mPhotoUrl;
+    private Group mGroup;
     private FirebaseDatabase mFirebaseDatabase;
     private FirebaseAuth mFirebaseAuth;
     private FirebaseUser mCurrentUser;
@@ -46,8 +48,9 @@ public class CreateGroupActivity extends AppCompatActivity {
     private StorageReference mProfilePhotoStorageReference;
     private GeoFire mGeoFire;
     private GeoLocation mCurrentLocation;
+    private Toolbar mToolbar;
     private EditText mTitle, mDescription, mPhoneNo;
-    private Button mCreateButton;
+    private Button mCreateButton, mUpdateButton;
     private ImageButton mUploadPhotoButton;
     private ImageView mProfilePhoto;
     private RadioGroup mTypeRadioGroup;
@@ -71,10 +74,11 @@ public class CreateGroupActivity extends AppCompatActivity {
         mTypeRadioGroup = (RadioGroup) findViewById(R.id.typeRadioGroup);
         mPhoneNo = (EditText) findViewById(R.id.phoneNoText);
         mCreateButton = (Button) findViewById(R.id.createButton);
+        mUpdateButton = (Button) findViewById(R.id.updateButton);
         mUploadPhotoButton = (ImageButton) findViewById(R.id.uploadImageButton);
         mProfilePhoto = (ImageView) findViewById(R.id.profileImageView);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
+        mToolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(mToolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         mUploadPhotoButton.setOnClickListener(new View.OnClickListener() {
@@ -101,6 +105,11 @@ public class CreateGroupActivity extends AppCompatActivity {
                 String ownerId = mCurrentUser.getUid();
                 String ownerName = mCurrentUser.getDisplayName();
                 String type = getGroupType();
+                //Check for empty title and description
+                if(title.isEmpty() || description.isEmpty()) {
+                    Toast.makeText(getApplicationContext(), "Please enter title and description.", Toast.LENGTH_SHORT).show();
+                    return;
+                }
                 Group newGroup = new Group(title, description, ownerId, ownerName, phoneNo, type, mPhotoUrl);
                 DatabaseReference groupDbRef = mRootDbRef.child("groups").push();
                 String groupId = groupDbRef.getKey();
@@ -115,6 +124,65 @@ public class CreateGroupActivity extends AppCompatActivity {
                 finish();
             }
         });
+
+        mUpdateButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //Update Group
+                mGroup.setTitle(mTitle.getText().toString());
+                mGroup.setDescription(mDescription.getText().toString());
+                mGroup.setPhoneNo(mPhoneNo.getText().toString());
+                mGroup.setType(getGroupType());
+                //Check for empty title and description
+                if(mGroup.getTitle().isEmpty() || mGroup.getDescription().isEmpty()) {
+                    Toast.makeText(getApplicationContext(), "Please enter title and description.", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                // Updating DB, but not updating location
+                Map<String, Object> groupValues = mGroup.toMap();
+                mRootDbRef.child("groups").child(mGroup.getId()).updateChildren(groupValues);
+
+                Toast.makeText(getApplicationContext(), "Group updated successfully!", Toast.LENGTH_LONG).show();
+                finish();
+            }
+        });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Intent intent = getIntent();
+        if(intent != null && intent.hasExtra("GROUP_ID")) {
+            // Set UI
+            mToolbar.setTitle("Update Post");
+            mCreateButton.setVisibility(View.GONE);
+            mUpdateButton.setVisibility(View.VISIBLE);
+            // Get Group Info
+            String groupId = intent.getStringExtra("GROUP_ID");
+            DatabaseReference groupDbRef = mRootDbRef.child("groups").child(groupId);
+            groupDbRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    mGroup = dataSnapshot.getValue(Group.class);
+                    mTitle.setText(mGroup.getTitle());
+                    mDescription.setText(mGroup.getDescription());
+                    mPhoneNo.setText(mGroup.getPhoneNo());
+                    if(mGroup.getType().equals(getString(R.string.group_type_service)))
+                        mTypeRadioGroup.check(R.id.serviceRadioButton);
+                    else if(mGroup.getType().equals(getString(R.string.group_type_group)))
+                        mTypeRadioGroup.check(R.id.interestRadioButton);
+                    if(mGroup.getPhotoUrl() != null) {
+                        mProfilePhoto.setVisibility(View.VISIBLE);
+                        mUploadPhotoButton.setVisibility(View.GONE);
+                        Glide.with(mProfilePhoto.getContext())
+                                .load(mGroup.getPhotoUrl())
+                                .into(mProfilePhoto);
+                    }
+                }
+                @Override
+                public void onCancelled(DatabaseError databaseError) {}
+            });
+        }
     }
 
     @Override
@@ -144,8 +212,12 @@ public class CreateGroupActivity extends AppCompatActivity {
     private String getGroupType() {
         int selectedId = mTypeRadioGroup.getCheckedRadioButtonId();
         RadioButton selectedButton = (RadioButton) findViewById(selectedId);
-        String type = selectedButton.getText().toString();
-        return type;
+        if(selectedButton != null) {
+            String type = selectedButton.getText().toString();
+            return type;
+        } else {
+            return null;
+        }
     }
 
     private String setGroupChat(String groupId) {
