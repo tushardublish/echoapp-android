@@ -55,7 +55,12 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
     private void sendNotification(RemoteMessage message) {
         Intent intent = new Intent(this, ChatActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        intent.putExtra("CHAT_USER",message.getData().get("CHAT_USER"));
+        if(message.getData().containsKey("CHAT_USER"))
+            intent.putExtra("CHAT_USER", message.getData().get("CHAT_USER"));
+        if(message.getData().containsKey("CHAT_GROUP"))
+            intent.putExtra("CHAT_GROUP", message.getData().get("CHAT_GROUP"));
+        if(message.getData().containsKey("TITLE"))
+            intent.putExtra("TITLE", message.getData().get("TITLE"));
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0 /* Request code */, intent,
                 PendingIntent.FLAG_ONE_SHOT);
 

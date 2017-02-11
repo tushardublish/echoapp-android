@@ -8,7 +8,8 @@ import java.util.List;
  */
 
 public class Admin {
-    private static List<String> ADMINS = Arrays.asList("vBnYd7839IMcCw0H5XaELsnMVfD2");
+    private static List<String> ADMINS = Arrays.asList("vBnYd7839IMcCw0H5XaELsnMVfD2",
+            "Vjk5vy7c0ddqOqbDeJO5EZ6Awcf2");
 
     public static boolean isAdmin(String userId) {
         return ADMINS.contains(userId);

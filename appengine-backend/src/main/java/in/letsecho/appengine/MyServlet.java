@@ -156,10 +156,14 @@ public class MyServlet extends HttpServlet {
             notification.addProperty("tag", message.getSenderUid());
         obj.add("notification", notification);
         JsonObject data = new JsonObject();
-        if(message.getGroupId() != null)
+        if(message.getGroupId() != null) {
             data.addProperty("CHAT_GROUP", message.getGroupId());
-        else
+            data.addProperty("TITLE", message.getGroupName());
+        }
+        else {
             data.addProperty("CHAT_USER", message.getSenderUid());
+            data.addProperty("TITLE", message.getName());
+        }
         obj.add("data", data);
         String postJsonData = obj.toString();
 

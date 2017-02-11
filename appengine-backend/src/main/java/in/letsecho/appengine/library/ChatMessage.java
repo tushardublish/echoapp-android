@@ -12,6 +12,7 @@ public class ChatMessage {
     private Boolean notified;
     private HashMap<String,Boolean> seen;
     private String groupId;
+    private String groupName;
 
     public ChatMessage() {
         this.seen = new HashMap();
@@ -79,5 +80,13 @@ public class ChatMessage {
 
     public void setGroupId(String groupId) {
         this.groupId = groupId;
+    }
+
+    public String getGroupName() {
+        return groupName;
+    }
+
+    public void setGroupName(String groupName) {
+        this.groupName = groupName;
     }
 }

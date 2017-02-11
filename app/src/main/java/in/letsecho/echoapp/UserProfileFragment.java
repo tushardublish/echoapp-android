@@ -92,7 +92,12 @@ public class UserProfileFragment extends DialogFragment {
                 // Set Work
                 for(DataSnapshot workObj: userObj.child("fbdata/work").getChildren()) {
                     FbWork work = workObj.getValue(FbWork.class);
-                    mWorkTextView.setText(work.getPosition() + " at " + work.getEmployer());
+                    if(work.getPosition() != null && work.getEmployer() != null)
+                        mWorkTextView.setText(work.getPosition() + " at " + work.getEmployer());
+                    else if(work.getPosition() != null)
+                        mWorkTextView.setText(work.getPosition());
+                    else if(work.getEmployer() != null)
+                        mWorkTextView.setText(work.getEmployer());
                     break;
                 }
                 //Set Education

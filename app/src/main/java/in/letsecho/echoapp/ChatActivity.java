@@ -39,6 +39,7 @@ import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
+import com.twitter.sdk.android.core.models.User;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -72,6 +73,8 @@ public class ChatActivity extends AppCompatActivity {
 
     private FirebaseUser mCurrentUser;
     private String mSecondaryUid, mChatId, mGroupId;
+    private Group mGroup;
+    private UserProfile mSecondaryUser;
     private int mChatType;
 
     private FirebaseDatabase mFirebaseDatabase;
@@ -149,8 +152,10 @@ public class ChatActivity extends AppCompatActivity {
                 // TODO: Send messages on click
                 ChatMessage chatMessage = new ChatMessage(mMessageEditText.getText().toString(),
                         mCurrentUser.getDisplayName(), mCurrentUser.getUid(), null, new HashMap());
-                if(mChatType == CHAT_GROUP && mGroupId != null)
+                if(mChatType == CHAT_GROUP && mGroupId != null) {
                     chatMessage.setGroupId(mGroupId);
+                    chatMessage.setGroupName(mGroup.getTitle());
+                }
                 mCurrentChatDbRef.push().setValue(chatMessage);
                 // Clear input box
                 mMessageEditText.setText("");
@@ -305,20 +310,18 @@ public class ChatActivity extends AppCompatActivity {
 
     private void attachDatabaseReadListener() {
         //To get secondary user name or group name
-//        mOtherEntityDbRef.addListenerForSingleValueEvent( new ValueEventListener() {
-//                @Override
-//                public void onDataChange(DataSnapshot dataSnapshot) {
-//                    if(mChatType == CHAT_USER) {
-//                        UserProfile secondaryUser = dataSnapshot.getValue(UserProfile.class);
-//                        mToolbar.setTitle(secondaryUser.getName());
-//                    } else if(mChatType == CHAT_GROUP) {
-//                        Group group = dataSnapshot.getValue(Group.class);
-//                        mToolbar.setTitle(group.getTitle());
-//                    }
-//                };
-//                @Override
-//                public void onCancelled(DatabaseError databaseError) {};
-//            });
+        mOtherEntityDbRef.addListenerForSingleValueEvent( new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    if(mChatType == CHAT_USER) {
+                        mSecondaryUser = dataSnapshot.getValue(UserProfile.class);
+                    } else if(mChatType == CHAT_GROUP) {
+                        mGroup = dataSnapshot.getValue(Group.class);
+                    }
+                };
+                @Override
+                public void onCancelled(DatabaseError databaseError) {};
+            });
 
 
         // Get mChatId or create a new chat

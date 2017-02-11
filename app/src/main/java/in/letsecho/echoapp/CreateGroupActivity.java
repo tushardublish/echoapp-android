@@ -128,12 +128,15 @@ public class CreateGroupActivity extends AppCompatActivity {
         mUpdateButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //Update Group
+                // Update Group
                 mGroup.setTitle(mTitle.getText().toString());
                 mGroup.setDescription(mDescription.getText().toString());
                 mGroup.setPhoneNo(mPhoneNo.getText().toString());
                 mGroup.setType(getGroupType());
-                //Check for empty title and description
+                // Photo url
+                if(mPhotoUrl != null && !mPhotoUrl.equals(mGroup.getPhotoUrl()))
+                    mGroup.setPhotoUrl(mPhotoUrl);
+                // Check for empty title and description
                 if(mGroup.getTitle().isEmpty() || mGroup.getDescription().isEmpty()) {
                     Toast.makeText(getApplicationContext(), "Please enter title and description.", Toast.LENGTH_SHORT).show();
                     return;
@@ -177,6 +180,7 @@ public class CreateGroupActivity extends AppCompatActivity {
                         Glide.with(mProfilePhoto.getContext())
                                 .load(mGroup.getPhotoUrl())
                                 .into(mProfilePhoto);
+                        mPhotoUrl = mGroup.getPhotoUrl();
                     }
                 }
                 @Override
