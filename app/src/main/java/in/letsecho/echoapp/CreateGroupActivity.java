@@ -18,6 +18,7 @@ import com.bumptech.glide.Glide;
 import com.firebase.geofire.GeoFire;
 import com.firebase.geofire.GeoLocation;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -48,6 +49,7 @@ public class CreateGroupActivity extends AppCompatActivity {
     private StorageReference mProfilePhotoStorageReference;
     private GeoFire mGeoFire;
     private GeoLocation mCurrentLocation;
+    private FirebaseAnalytics mFirebaseAnalytics;
     private Toolbar mToolbar;
     private EditText mTitle, mDescription, mPhoneNo;
     private Button mCreateButton, mUpdateButton;
@@ -64,6 +66,7 @@ public class CreateGroupActivity extends AppCompatActivity {
         mRootDbRef = mFirebaseDatabase.getReference();
         mFirebaseAuth = FirebaseAuth.getInstance();
         mCurrentUser = mFirebaseAuth.getCurrentUser();
+        mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
         DatabaseReference locationDbRef = mRootDbRef.child("locations/groups");
         mProfilePhotoStorageReference = FirebaseStorage.getInstance().getReference().child("profile_photos");
         mGeoFire = new GeoFire(locationDbRef);
@@ -121,6 +124,7 @@ public class CreateGroupActivity extends AppCompatActivity {
                 mGeoFire.setLocation(groupId, mCurrentLocation);
 
                 Toast.makeText(getApplicationContext(), "Group created successfully!", Toast.LENGTH_LONG).show();
+                logCreateGroup(newGroup);
                 finish();
             }
         });
@@ -257,5 +261,11 @@ public class CreateGroupActivity extends AppCompatActivity {
         intent.setType("image/jpeg");
         intent.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
         startActivityForResult(Intent.createChooser(intent, "Complete action using"), RC_PHOTO_PICKER);
+    }
+
+    private void logCreateGroup(Group group) {
+        Bundle bundle = new Bundle();
+        bundle.putString(FirebaseAnalytics.Param.ITEM_CATEGORY, group.getType());
+        mFirebaseAnalytics.logEvent(getString(R.string.create_group_event), bundle);
     }
 }

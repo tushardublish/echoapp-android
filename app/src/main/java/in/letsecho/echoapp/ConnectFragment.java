@@ -3,6 +3,7 @@ package in.letsecho.echoapp;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,6 +28,7 @@ import in.letsecho.echoapp.library.EntityDisplayModel;
 import in.letsecho.echoapp.library.Group;
 import in.letsecho.echoapp.library.UserProfile;
 
+import static android.R.color.white;
 import static in.letsecho.echoapp.library.EntityDisplayModel.GROUP_TYPE;
 import static in.letsecho.echoapp.library.EntityDisplayModel.USER_TYPE;
 

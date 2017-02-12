@@ -28,6 +28,7 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.target.BitmapImageViewTarget;
 import com.firebase.ui.auth.AuthUI;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.ChildEventListener;
@@ -86,6 +87,7 @@ public class ChatActivity extends AppCompatActivity {
     private FirebaseAuth.AuthStateListener mAuthStateListener;
     private FirebaseStorage mFirebaseStorage;
     private StorageReference mChatPhotosStorageReference;
+    private FirebaseAnalytics mFirebaseAnalytics;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -96,6 +98,7 @@ public class ChatActivity extends AppCompatActivity {
         mFirebaseDatabase = FirebaseDatabase.getInstance();
         mFirebaseAuth = FirebaseAuth.getInstance();
         mFirebaseStorage = FirebaseStorage.getInstance();
+        mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
         mChatsDbRef = mFirebaseDatabase.getReference().child("chats");
         mChatPhotosStorageReference = mFirebaseStorage.getReference().child("chat_photos");
 
@@ -125,6 +128,7 @@ public class ChatActivity extends AppCompatActivity {
                 intent.setType("image/jpeg");
                 intent.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
                 startActivityForResult(Intent.createChooser(intent, "Complete action using"), RC_PHOTO_PICKER);
+                mFirebaseAnalytics.logEvent(getString(R.string.send_photo_event), new Bundle());
             }
         });
 
@@ -159,6 +163,7 @@ public class ChatActivity extends AppCompatActivity {
                 mCurrentChatDbRef.push().setValue(chatMessage);
                 // Clear input box
                 mMessageEditText.setText("");
+                mFirebaseAnalytics.logEvent(getString(R.string.send_message_event), new Bundle());
             }
         });
     }
@@ -301,6 +306,7 @@ public class ChatActivity extends AppCompatActivity {
     private void onSignedInInitialize() {
         mMessageAdapter.setUserId(mCurrentUser.getUid());
         attachDatabaseReadListener();
+        logViewEvent();
     }
 
     private void onSignedOutCleanup() {
@@ -436,5 +442,13 @@ public class ChatActivity extends AppCompatActivity {
         Toast.makeText(getApplicationContext(), "Chat deleted successfully. " +
                 "You can connect again with the person if you are interested.", Toast.LENGTH_LONG).show();
         finish();
+    }
+
+    private void logViewEvent() {
+        Bundle bundle = new Bundle();
+        bundle.putString(FirebaseAnalytics.Param.ITEM_ID, mCurrentUser.getUid());
+        bundle.putString(FirebaseAnalytics.Param.ITEM_NAME, mCurrentUser.getDisplayName());
+        bundle.putString(FirebaseAnalytics.Param.ITEM_CATEGORY, "chat_window");
+        mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.VIEW_ITEM, bundle);
     }
 }

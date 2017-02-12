@@ -16,6 +16,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
+import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -30,13 +31,14 @@ public class UserProfileFragment extends DialogFragment {
 
     private FirebaseDatabase mFirebaseDatabase;
     private DatabaseReference mUserProfileDbRef;
+    private FirebaseAnalytics mFirebaseAnalytics;
     private View mView;
     private ImageView mPhotoImageView;
     private TextView mNameTextView, mWorkTextView, mEduTextView;
     private Button mConnectButton;
     private ImageButton mFbButton;
     private String mUserId;
-    private UserProfile secondaryUser;
+    private UserProfile mSecondaryUser;
     private int max_image_size;
 
     @Override
@@ -57,8 +59,9 @@ public class UserProfileFragment extends DialogFragment {
             public void onClick(View v) {
                 Intent chatIntent = new Intent(getActivity().getApplicationContext(), ChatActivity.class)
                         .putExtra("CHAT_USER", mUserId)
-                        .putExtra("TITLE", secondaryUser.getName());
+                        .putExtra("TITLE", mSecondaryUser.getName());
                 startActivity(chatIntent);
+                mFirebaseAnalytics.logEvent(getString(R.string.connect_with_user_event), new Bundle());
             }
         });
         mFbButton = (ImageButton) mView.findViewById(R.id.fbButton);
@@ -73,22 +76,23 @@ public class UserProfileFragment extends DialogFragment {
         if(mUserId == null)
             dismiss();
         mFirebaseDatabase = FirebaseDatabase.getInstance();
+        mFirebaseAnalytics = FirebaseAnalytics.getInstance(getActivity().getApplicationContext());
         mUserProfileDbRef = mFirebaseDatabase.getReference("users").child(mUserId);
         mUserProfileDbRef.addListenerForSingleValueEvent((new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot userObj) {
-                secondaryUser = userObj.getValue(UserProfile.class);
+                mSecondaryUser = userObj.getValue(UserProfile.class);
                 // Set Photo
-                if (secondaryUser.getPhotoUrl() != null) {
+                if (mSecondaryUser.getPhotoUrl() != null) {
                     Glide.with(mPhotoImageView.getContext())
-                            .load(secondaryUser.getPhotoUrl())
+                            .load(mSecondaryUser.getPhotoUrl())
                             .into(mPhotoImageView);
                 }
                 max_image_size = mView.getWidth();
                 mPhotoImageView.setMaxWidth(max_image_size);
                 mPhotoImageView.setMaxHeight(max_image_size);
                 //Set Name
-                mNameTextView.setText(secondaryUser.getName());
+                mNameTextView.setText(mSecondaryUser.getName());
                 // Set Work
                 for(DataSnapshot workObj: userObj.child("fbdata/work").getChildren()) {
                     FbWork work = workObj.getValue(FbWork.class);
@@ -122,11 +126,13 @@ public class UserProfileFragment extends DialogFragment {
                         Intent fbIntent = getOpenFacebookIntent(getActivity().getApplicationContext(),
                                                                 fbProfileId);
                         startActivity(fbIntent);
+                        mFirebaseAnalytics.logEvent(getString(R.string.view_facebook_profile_event), new Bundle());
                     }
                 });
                 else {
                     mFbButton.setVisibility(View.INVISIBLE);
                 }
+                logViewEvent();
             }
 
             @Override
@@ -144,5 +150,13 @@ public class UserProfileFragment extends DialogFragment {
             // open in browser
             return new Intent(Intent.ACTION_VIEW, Uri.parse(facebookUrl));
         }
+    }
+
+    private void logViewEvent() {
+        Bundle bundle = new Bundle();
+        bundle.putString(FirebaseAnalytics.Param.ITEM_ID, mSecondaryUser.getUID());
+        bundle.putString(FirebaseAnalytics.Param.ITEM_NAME, mSecondaryUser.getName());
+        bundle.putString(FirebaseAnalytics.Param.ITEM_CATEGORY, "user_profile");
+        mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.VIEW_ITEM, bundle);
     }
 }

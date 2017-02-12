@@ -4,7 +4,6 @@ package in.letsecho.echoapp;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.DialogFragment;
-import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -17,6 +16,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
+import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -29,10 +29,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import in.letsecho.echoapp.library.Admin;
-import in.letsecho.echoapp.library.FbEducation;
-import in.letsecho.echoapp.library.FbWork;
 import in.letsecho.echoapp.library.Group;
-import in.letsecho.echoapp.library.UserProfile;
 
 import static com.facebook.FacebookSdk.getApplicationContext;
 import static java.lang.Boolean.FALSE;
@@ -41,6 +38,7 @@ public class GroupProfileFragment extends DialogFragment {
 
     private DatabaseReference mRootDbRef, mGroupProfileDbRef;
     private FirebaseUser mCurrentUser;
+    private FirebaseAnalytics mFirebaseAnalytics;
     private View mView;
     private ImageView mPhotoImageView;
     private TextView mTitleTextView, mOwnerTextView, mMemberTextView, mDescriptionTextView;
@@ -81,6 +79,7 @@ public class GroupProfileFragment extends DialogFragment {
         if(mGroupId == null || mCurrentUser == null)
             dismiss();
         mRootDbRef = FirebaseDatabase.getInstance().getReference();
+        mFirebaseAnalytics = FirebaseAnalytics.getInstance(getActivity().getApplicationContext());
         mGroupProfileDbRef = mRootDbRef.child("groups").child(mGroupId);
         mGroupProfileDbRef.addListenerForSingleValueEvent((new ValueEventListener() {
             @Override
@@ -133,7 +132,7 @@ public class GroupProfileFragment extends DialogFragment {
                     });
                 }
                 //Set Message
-                if(group.getOwnerId() != null) {
+                if(group.getOwnerId() != null && !mCurrentUser.getUid().equals(group.getOwnerId())) {
                     mMessageOwnerButton.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
@@ -141,23 +140,25 @@ public class GroupProfileFragment extends DialogFragment {
                                     .putExtra("CHAT_USER", group.getOwnerId())
                                     .putExtra("TITLE", group.getOwnerName());
                             startActivity(chatIntent);
+                            mFirebaseAnalytics.logEvent(getString(R.string.message_group_owner_event), new Bundle());
                         }
                     });
                 } else {
                     mMessageOwnerButton.setVisibility(View.INVISIBLE);
                 }
                 //Set Phone No
-                if(group.getPhoneNo() == null)
-                    mCallOwnerButton.setVisibility(View.INVISIBLE);
-                else {
+                if(group.getPhoneNo() != null && !mCurrentUser.getUid().equals(group.getOwnerId())) {
                     mCallOwnerButton.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
                             Intent intent = new Intent(Intent.ACTION_DIAL, Uri.fromParts("tel",
                                                             group.getPhoneNo(), null));
                             startActivity(intent);
+                            mFirebaseAnalytics.logEvent(getString(R.string.call_group_owner_event), new Bundle());
                         }
                     });
+                } else {
+                    mCallOwnerButton.setVisibility(View.INVISIBLE);
                 }
 
                 //Set Join Group
@@ -167,6 +168,7 @@ public class GroupProfileFragment extends DialogFragment {
                         if(mMember == FALSE) {
                             addUserToGroup(mCurrentUser.getUid(), group);
                             Toast.makeText(getApplicationContext(), "Following Group Conversation", Toast.LENGTH_LONG).show();
+                            logJoinGroup(group);
                         }
                         Intent chatIntent = new Intent(getActivity().getApplicationContext(), ChatActivity.class)
                                 .putExtra("CHAT_GROUP", group.getId())
@@ -193,6 +195,7 @@ public class GroupProfileFragment extends DialogFragment {
                     @Override
                     public void onCancelled(DatabaseError databaseError) { }
                 });
+                logViewEvent(group);
             }
 
             @Override
@@ -233,5 +236,19 @@ public class GroupProfileFragment extends DialogFragment {
             @Override
             public void onCancelled(DatabaseError databaseError) { }
         });
+    }
+
+    private void logViewEvent(Group group) {
+        Bundle bundle = new Bundle();
+        bundle.putString(FirebaseAnalytics.Param.ITEM_ID, group.getId());
+        bundle.putString(FirebaseAnalytics.Param.ITEM_NAME, group.getTitle());
+        bundle.putString(FirebaseAnalytics.Param.ITEM_CATEGORY, "group_profile");
+        mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.VIEW_ITEM, bundle);
+    }
+
+    private void logJoinGroup(Group group) {
+        Bundle bundle = new Bundle();
+        bundle.putString(FirebaseAnalytics.Param.GROUP_ID, group.getId());
+        mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.JOIN_GROUP, bundle);
     }
 }
