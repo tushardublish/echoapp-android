@@ -1,10 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
       xmlns:app="http://schemas.android.com/apk/res-auto">
+
     <item android:title="New Group"
         android:id="@+id/new_group"
         app:showAsAction="always"
         android:icon="@drawable/ic_add_location_white_24dp"/>
+
+    <item android:title="About"
+        android:id="@+id/about"
+        android:icon="@drawable/ic_info_outline_white_24dp"
+        app:showAsAction="always"
+        android:visible="false" />
+
+    <item android:title="New Post"
+        android:icon="@drawable/ic_add_location_white_24dp"
+        android:id="@+id/new_post"
+        app:showAsAction="never" />
+
+    <item android:title="My Profile"
+        android:id="@+id/my_profile" />
     <item
         android:id="@+id/sign_out_menu"
         android:title="@string/sign_out"

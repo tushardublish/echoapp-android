@@ -258,7 +258,7 @@ public class CreateGroupActivity extends AppCompatActivity {
 
     private void uploadPhoto() {
         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-        intent.setType("image/jpeg");
+        intent.setType("image/*");
         intent.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
         startActivityForResult(Intent.createChooser(intent, "Complete action using"), RC_PHOTO_PICKER);
     }

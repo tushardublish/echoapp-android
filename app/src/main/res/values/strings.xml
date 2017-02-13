@@ -19,6 +19,7 @@
     <string name="cancel_button">Cancel</string>
     <string name="group_type_service">Service</string>
     <string name="group_type_group">Group</string>
+    <string name="about_title">What is it all about?</string>
     <!--Log Events-->
     <string name="view_facebook_profile_event">view_facebook_profile</string>
     <string name="connect_with_user_event">connect_with_user</string>

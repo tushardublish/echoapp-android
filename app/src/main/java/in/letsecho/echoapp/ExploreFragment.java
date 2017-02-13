@@ -207,7 +207,7 @@ public class ExploreFragment extends Fragment {
             };
             mCurrentLocationDbRef.addValueEventListener(mCurrentLocationEventListener);
         }
-
+        addGroupToList("-KcpvhJdGQXSnFcjhyDv"); // Adding support group for everyone
         getPastNearbyPeople();
     }
 

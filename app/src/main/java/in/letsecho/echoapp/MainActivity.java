@@ -138,16 +138,30 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.sign_out_menu:
-                mCurrentUser = null;
-                AuthUI.getInstance().signOut(this);
-                return true;
+            case R.id.new_post:
             case R.id.new_group:
                 Intent intent = new Intent(this.getApplicationContext(), CreateGroupActivity.class);
                 startActivity(intent);
+                break;
+            case R.id.about:
+                DialogFragment aboutDialog = new AboutFragment();
+                aboutDialog.show(this.getFragmentManager(), "about");
+                break;
+            case R.id.my_profile:
+                DialogFragment profileDialog = new UserProfileFragment();
+                Bundle bundle = new Bundle();
+                bundle.putString("secondaryUserId", mCurrentUser.getUid());
+                profileDialog.setArguments(bundle);
+                profileDialog.show(this.getFragmentManager(), "userprofile");
+                break;
+            case R.id.sign_out_menu:
+                mCurrentUser = null;
+                AuthUI.getInstance().signOut(this);
+                break;
             default:
                 return super.onOptionsItemSelected(item);
         }
+        return true;
     }
 
     private FirebaseAuth.AuthStateListener getAuthStateListener() {

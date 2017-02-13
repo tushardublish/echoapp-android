@@ -17,6 +17,8 @@ import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.google.firebase.analytics.FirebaseAnalytics;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -31,7 +33,9 @@ public class UserProfileFragment extends DialogFragment {
 
     private FirebaseDatabase mFirebaseDatabase;
     private DatabaseReference mUserProfileDbRef;
+    private FirebaseAuth mFirebaseAuth;
     private FirebaseAnalytics mFirebaseAnalytics;
+    private FirebaseUser mCurrentUser;
     private View mView;
     private ImageView mPhotoImageView;
     private TextView mNameTextView, mWorkTextView, mEduTextView;
@@ -76,6 +80,8 @@ public class UserProfileFragment extends DialogFragment {
         if(mUserId == null)
             dismiss();
         mFirebaseDatabase = FirebaseDatabase.getInstance();
+        mFirebaseAuth = FirebaseAuth.getInstance();
+        mCurrentUser = mFirebaseAuth.getCurrentUser();
         mFirebaseAnalytics = FirebaseAnalytics.getInstance(getActivity().getApplicationContext());
         mUserProfileDbRef = mFirebaseDatabase.getReference("users").child(mUserId);
         mUserProfileDbRef.addListenerForSingleValueEvent((new ValueEventListener() {
@@ -132,6 +138,9 @@ public class UserProfileFragment extends DialogFragment {
                 else {
                     mFbButton.setVisibility(View.INVISIBLE);
                 }
+                // Connect Button
+                if(mCurrentUser.getUid().equals(mSecondaryUser.getUID()))
+                    mConnectButton.setVisibility(View.INVISIBLE);
                 logViewEvent();
             }
 
