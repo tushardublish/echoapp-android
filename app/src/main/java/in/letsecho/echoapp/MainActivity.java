@@ -145,14 +145,14 @@ public class MainActivity extends AppCompatActivity {
                 break;
             case R.id.about:
                 DialogFragment aboutDialog = new AboutFragment();
-                aboutDialog.show(this.getFragmentManager(), "about");
+                aboutDialog.show(getFragmentManager(), "about");
                 break;
             case R.id.my_profile:
                 DialogFragment profileDialog = new UserProfileFragment();
                 Bundle bundle = new Bundle();
                 bundle.putString("secondaryUserId", mCurrentUser.getUid());
                 profileDialog.setArguments(bundle);
-                profileDialog.show(this.getFragmentManager(), "userprofile");
+                profileDialog.show(getFragmentManager(), "userprofile");
                 break;
             case R.id.sign_out_menu:
                 mCurrentUser = null;

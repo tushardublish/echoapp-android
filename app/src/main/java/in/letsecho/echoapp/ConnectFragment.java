@@ -73,7 +73,6 @@ public class ConnectFragment extends Fragment {
                 }
             }
         });
-
         // Initialize progress bar
         mProgressBar = (ProgressBar) view.findViewById(R.id.progressBar);
         mProgressBar.setVisibility(ProgressBar.INVISIBLE);

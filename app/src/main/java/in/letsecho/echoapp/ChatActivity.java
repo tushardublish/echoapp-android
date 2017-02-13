@@ -1,5 +1,6 @@
 package in.letsecho.echoapp;
 
+import android.app.DialogFragment;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
@@ -52,6 +53,8 @@ import in.letsecho.library.ChatMessage;
 import in.letsecho.echoapp.library.UserProfile;
 
 import static in.letsecho.echoapp.R.id.photoImageView;
+import static in.letsecho.echoapp.library.EntityDisplayModel.GROUP_TYPE;
+import static in.letsecho.echoapp.library.EntityDisplayModel.USER_TYPE;
 import static java.lang.Boolean.TRUE;
 
 public class ChatActivity extends AppCompatActivity {
@@ -117,8 +120,26 @@ public class ChatActivity extends AppCompatActivity {
         mMessageAdapter = new MessageAdapter(this, R.layout.item_message, chatMessages);
         mMessageListView.setAdapter(mMessageAdapter);
 
-        // Initialize progress bar
-        mProgressBar.setVisibility(ProgressBar.INVISIBLE);
+        mToolbar.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Open Profile
+                if (mChatType == CHAT_USER) {
+                    DialogFragment profileDialog = new UserProfileFragment();
+                    Bundle bundle = new Bundle();
+                    bundle.putString("secondaryUserId", mSecondaryUser.getUID());
+                    profileDialog.setArguments(bundle);
+                    profileDialog.show(getFragmentManager(), "userprofile");
+                }
+                else if (mChatType == CHAT_GROUP) {
+                    DialogFragment profileDialog = new GroupProfileFragment();
+                    Bundle bundle = new Bundle();
+                    bundle.putString("groupId", mGroup.getId());
+                    profileDialog.setArguments(bundle);
+                    profileDialog.show(getFragmentManager(), "groupprofile");
+                }
+            }
+        });
 
         // ImagePickerButton shows an image picker to upload a image for a message
         mPhotoPickerButton.setOnClickListener(new View.OnClickListener() {
@@ -359,6 +380,7 @@ public class ChatActivity extends AppCompatActivity {
                         mCurrentChatDbRef = mChatsDbRef.child("messages").child(mChatId);
                         mCurrentChatDbRef.addChildEventListener(mMessageEventListener);
                     }
+                    mProgressBar.setVisibility(ProgressBar.INVISIBLE);
                 };
                 @Override
                 public void onCancelled(DatabaseError databaseError) {};

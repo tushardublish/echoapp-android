@@ -39,8 +39,7 @@ public class UserProfileFragment extends DialogFragment {
     private View mView;
     private ImageView mPhotoImageView;
     private TextView mNameTextView, mWorkTextView, mEduTextView;
-    private Button mConnectButton;
-    private ImageButton mFbButton;
+    private ImageButton mConnectButton, mFbButton;
     private String mUserId;
     private UserProfile mSecondaryUser;
     private int max_image_size;
@@ -57,7 +56,7 @@ public class UserProfileFragment extends DialogFragment {
         mNameTextView = (TextView) mView.findViewById(R.id.nameTextView);
         mWorkTextView = (TextView) mView.findViewById(R.id.workTextView);
         mEduTextView = (TextView) mView.findViewById(R.id.eduTextView);
-        mConnectButton = (Button) mView.findViewById(R.id.connectButton);
+        mConnectButton = (ImageButton) mView.findViewById(R.id.connectButton);
         mConnectButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

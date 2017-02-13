@@ -79,7 +79,7 @@ public class ExploreFragment extends Fragment {
 
         // Initialize progress bar
         mProgressBar = (ProgressBar) view.findViewById(R.id.progressBar);
-        mProgressBar.setVisibility(ProgressBar.INVISIBLE);
+
         return view;
     }
 
@@ -200,6 +200,7 @@ public class ExploreFragment extends Fragment {
                                 (double) locationObj.get(1));
                         getNearbyGroups(currentLocation);
                         getNearbyPeople(currentLocation);
+                        mProgressBar.setVisibility(ProgressBar.INVISIBLE);
                     }
                 }
                 @Override
