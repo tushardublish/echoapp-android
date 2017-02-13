@@ -100,18 +100,21 @@
                 android:layout_marginTop="16dp">
 
                 <RadioButton
-                    android:text="@string/group_type_service"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:id="@+id/serviceRadioButton"
-                    android:layout_weight="1" />
-
-                <RadioButton
                     android:text="@string/group_type_group"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:id="@+id/interestRadioButton"
-                    android:layout_weight="1" />
+                    android:layout_weight="1"
+                    android:checked="true" />
+
+                <RadioButton
+                    android:text="@string/group_type_service"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/serviceRadioButton"
+                    android:layout_weight="1"
+                    android:checked="false" />
+
             </RadioGroup>
 
             <TextView

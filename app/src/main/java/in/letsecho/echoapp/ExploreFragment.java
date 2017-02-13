@@ -349,15 +349,16 @@ public class ExploreFragment extends Fragment {
     }
 
     private void removeGroupFromList(String groupId) {
+        // First check in groups then check in services
         int index = EntityDisplayModel.findProfileOnUid(mGroups, groupId);
-        if(index >= 0) {
+        if(index >= 0 && index < mGroups.size()) {
             EntityDisplayModel removedGroup = mGroups.get(index);
             mGroups.remove(removedGroup);
             mExploreAdapter.notifyDataSetChanged();
             return;
         }
         index = EntityDisplayModel.findProfileOnUid(mServices, groupId);
-        if(index >= 0) {
+        if(index >= 0 && index < mServices.size()) {
             EntityDisplayModel removedGroup = mServices.get(index);
             mServices.remove(removedGroup);
             mExploreAdapter.notifyDataSetChanged();
@@ -367,9 +368,11 @@ public class ExploreFragment extends Fragment {
 
     private void removeUserFromCurrentList(String secondaryUserId) {
         int index = EntityDisplayModel.findProfileOnUid(mCurrentPeople, secondaryUserId);
-        EntityDisplayModel removedPerson = mCurrentPeople.get(index);
-        mCurrentPeople.remove(removedPerson);
-        mExploreAdapter.notifyDataSetChanged();
+        if(index >= 0 && index < mCurrentPeople.size()) {
+            EntityDisplayModel removedPerson = mCurrentPeople.get(index);
+            mCurrentPeople.remove(removedPerson);
+            mExploreAdapter.notifyDataSetChanged();
+        }
     }
 
     private void detachDatabaseReadListener() {

@@ -40,7 +40,7 @@ import in.letsecho.echoapp.library.Group;
 public class CreateGroupActivity extends AppCompatActivity {
 
     private static final int RC_PHOTO_PICKER =  1;
-    private String mPhotoUrl;
+    private String mPhotoUrl;   // Using this to store latest photo url
     private Group mGroup;
     private FirebaseDatabase mFirebaseDatabase;
     private FirebaseAuth mFirebaseAuth;
@@ -137,9 +137,7 @@ public class CreateGroupActivity extends AppCompatActivity {
                 mGroup.setDescription(mDescription.getText().toString());
                 mGroup.setPhoneNo(mPhoneNo.getText().toString());
                 mGroup.setType(getGroupType());
-                // Photo url
-                if(mPhotoUrl != null && !mPhotoUrl.equals(mGroup.getPhotoUrl()))
-                    mGroup.setPhotoUrl(mPhotoUrl);
+                mGroup.setPhotoUrl(mPhotoUrl);
                 // Check for empty title and description
                 if(mGroup.getTitle().isEmpty() || mGroup.getDescription().isEmpty()) {
                     Toast.makeText(getApplicationContext(), "Please enter title and description.", Toast.LENGTH_SHORT).show();
