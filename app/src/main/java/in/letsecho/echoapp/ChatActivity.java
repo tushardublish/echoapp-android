@@ -49,6 +49,7 @@ import java.util.List;
 import java.util.Map;
 
 import in.letsecho.echoapp.library.Group;
+import in.letsecho.echoapp.library.UserConnection;
 import in.letsecho.library.ChatMessage;
 import in.letsecho.echoapp.library.UserProfile;
 
@@ -353,14 +354,19 @@ public class ChatActivity extends AppCompatActivity {
 
         // Get mChatId or create a new chat
         if (mChatType == CHAT_USER)
-            mCurrentUserChatDbRef = mChatsDbRef.child("user_chats").child(mCurrentUser.getUid()).child(mSecondaryUid);
+            mCurrentUserChatDbRef = mChatsDbRef.child("user_connections").child(mCurrentUser.getUid()).child(mSecondaryUid);
         else if(mChatType == CHAT_GROUP)
             mCurrentUserChatDbRef = mChatsDbRef.child("user_groups").child(mCurrentUser.getUid()).child(mGroupId);
         if (mCurrentUserChatsEventListener == null) {
             mCurrentUserChatsEventListener = new ValueEventListener() {
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot) {
-                    mChatId = dataSnapshot.getValue(String.class);
+                    if(mChatType == CHAT_USER) {
+                        UserConnection userConnection = dataSnapshot.getValue(UserConnection.class);
+                        mChatId = userConnection.getChatId();
+                    } else if (mChatType == CHAT_GROUP) {
+                        mChatId = dataSnapshot.getValue(String.class);
+                    }
                     // New Chat
                     // Deprecated from 1.0.16. Only used right now to handle older versions.
                     // In newer version chat id is created on accepting request
@@ -460,9 +466,9 @@ public class ChatActivity extends AppCompatActivity {
         mCurrentUserChatsEventListener = null;
         // Delete chat info
         mChatsDbRef.child("info").child(mChatId).removeValue();
-        // Delete user chats for both users
-        mChatsDbRef.child("user_chats").child(mCurrentUser.getUid()).child(mSecondaryUid).removeValue();
-        mChatsDbRef.child("user_chats").child(mSecondaryUid).child(mCurrentUser.getUid()).removeValue();
+        // Delete user connection for both users
+        mChatsDbRef.child("user_connections").child(mCurrentUser.getUid()).child(mSecondaryUid).removeValue();
+        mChatsDbRef.child("user_connections").child(mSecondaryUid).child(mCurrentUser.getUid()).removeValue();
         Toast.makeText(getApplicationContext(), "Chat deleted successfully. " +
                 "You can connect again with the person if you are interested.", Toast.LENGTH_LONG).show();
         finish();

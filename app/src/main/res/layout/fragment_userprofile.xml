@@ -58,7 +58,8 @@
                 android:background="@drawable/com_facebook_button_background"
                 android:elevation="0dp"
                 android:layout_width="36dp"
-                android:layout_height="36dp" />
+                android:layout_height="36dp"
+                android:visibility="invisible" />
 
             <Space
                 android:layout_width="wrap_content"

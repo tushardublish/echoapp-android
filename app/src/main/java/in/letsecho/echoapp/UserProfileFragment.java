@@ -199,31 +199,37 @@ public class UserProfileFragment extends DialogFragment {
             mConnectButton.setVisibility(View.GONE);
             switch (mUserConnection.getStatus()) {
                 case CONNECTED:
+                    setActionButtonsVisibility(View.GONE);
                     mMessageButton.setVisibility(View.VISIBLE);
+                    // Fb button visible on connected and all received types and none sent types
+                    mFbButton.setVisibility(View.VISIBLE);
                     break;
                 case REQUEST_SENT:
                     mConnectButton.setVisibility(View.VISIBLE);
                     mConnectButton.setEnabled(false);
                     break;
                 case REQUEST_RECEIVED:
-                    showActionButtons();
+                    setActionButtonsVisibility(View.VISIBLE);
+                    mFbButton.setVisibility(View.VISIBLE);
                     break;
                 case REQUEST_SENT_REJECTED:
                     break;
                 case REQUEST_RECEVIED_REJECTED:
-                    showActionButtons();
+                    setActionButtonsVisibility(View.VISIBLE);
                     mRejectButton.setAlpha((float) 1.0);
                     mAcceptButton.setAlpha((float) 0.2);
                     mBlockButton.setAlpha((float) 0.2);
+                    mFbButton.setVisibility(View.VISIBLE);
                     break;
                 case REQUEST_SENT_BLOCKED:
                     dismiss();
                     break;
                 case REQUEST_RECEIVED_BLOCKED:
-                    showActionButtons();
+                    setActionButtonsVisibility(View.VISIBLE);
                     mBlockButton.setAlpha((float) 1.0);
                     mAcceptButton.setAlpha((float) 0.2);
                     mRejectButton.setAlpha((float) 0.2);
+                    mFbButton.setVisibility(View.VISIBLE);
                     break;
             }
         }
@@ -242,10 +248,10 @@ public class UserProfileFragment extends DialogFragment {
         mSecondaryUserConnectionDbRef.child("chatId").setValue(chatId);
     }
 
-    private void showActionButtons() {
-        mAcceptButton.setVisibility(View.VISIBLE);
-        mRejectButton.setVisibility(View.VISIBLE);
-        mBlockButton.setVisibility(View.VISIBLE);
+    private void setActionButtonsVisibility(int visibility) {
+        mAcceptButton.setVisibility(visibility);
+        mRejectButton.setVisibility(visibility);
+        mBlockButton.setVisibility(visibility);
     }
 
     private void displayUserProfile(DataSnapshot userObj) {
@@ -296,9 +302,6 @@ public class UserProfileFragment extends DialogFragment {
                     mFirebaseAnalytics.logEvent(getString(R.string.view_facebook_profile_event), new Bundle());
                 }
             });
-        else {
-            mFbButton.setVisibility(View.INVISIBLE);
-        }
         // Connect Button
         if(mCurrentUser.getUid().equals(mSecondaryUser.getUID()))
             mConnectButton.setVisibility(View.INVISIBLE);

@@ -92,6 +92,9 @@ public class PersonAdapterExpandableList extends BaseExpandableListAdapter{
                     .equals(_context.getString(R.string.group_type_group))) {
                 rightAlignedInfo.setBackgroundResource(R.drawable.bg_light_green);
                 rightAlignedInfo.setTextColor(ContextCompat.getColor(_context, white));
+            } else {
+                rightAlignedInfo.setBackgroundResource(R.drawable.bg_light_grey);
+                rightAlignedInfo.setTextColor(ContextCompat.getColor(_context, white));
             }
         }
 
