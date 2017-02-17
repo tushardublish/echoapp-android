@@ -59,9 +59,10 @@ public class MyServlet extends HttpServlet {
         FirebaseDatabase firebaseDb = FirebaseDatabase.getInstance();
         firebaseDb.setLogLevel(Logger.Level.DEBUG);
         rootDbRef = firebaseDb.getReference();
-        chatUsers = getUsersFromChat();
-        userInstances = getUserInstances();
-        sendMessageNotifications();
+//        chatUsers = getUsersFromChat();
+//        userInstances = getUserInstances();
+//        sendMessageNotifications();
+        MigrateUserConnections();
     }
 
     private void sendMessageNotifications() {
@@ -238,6 +239,34 @@ public class MyServlet extends HttpServlet {
             public void onCancelled(DatabaseError databaseError) {}
         });
         return instanceIds;
+    }
+
+    private void MigrateUserConnections() {
+        DatabaseReference userChatsDbRef = rootDbRef.child("chats/user_chats");
+        final DatabaseReference userConnectionsDbRef = rootDbRef.child("chats/user_connections");
+        userChatsDbRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot userSnapshot) {
+                HashMap<String, Object> user_connections = new HashMap<>();
+                for(DataSnapshot user: userSnapshot.getChildren()) {
+                    String primaryUID = user.getKey();
+                    HashMap<String, Object> chatsMap = new HashMap<>();
+                    for(DataSnapshot chat: user.getChildren()) {
+                        String secondaryUID = chat.getKey();
+                        String chatId = chat.getValue(String.class);
+                        HashMap<String, Object> chatIdMap = new HashMap<>();
+                        chatIdMap.put("chat_id", null);
+                        chatIdMap.put("chatId", chatId);
+                        chatIdMap.put("status", "Connected");
+                        chatsMap.put(secondaryUID, chatIdMap);
+                    }
+                    user_connections.put(primaryUID, chatsMap);
+                }
+                userConnectionsDbRef.updateChildren(user_connections);
+            }
+            @Override
+            public void onCancelled(DatabaseError databaseError) {}
+        });
     }
 
     //One time script to extract info from user_chats section and populate info section in chats

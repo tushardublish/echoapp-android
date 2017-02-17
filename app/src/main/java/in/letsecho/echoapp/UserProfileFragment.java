@@ -25,23 +25,39 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import in.letsecho.echoapp.library.FbEducation;
 import in.letsecho.echoapp.library.FbWork;
+import in.letsecho.echoapp.library.UserConnection;
 import in.letsecho.echoapp.library.UserProfile;
+
+import static in.letsecho.echoapp.library.UserConnection.CONNECTED;
+import static in.letsecho.echoapp.library.UserConnection.REQUEST_RECEIVED;
+import static in.letsecho.echoapp.library.UserConnection.REQUEST_RECEIVED_BLOCKED;
+import static in.letsecho.echoapp.library.UserConnection.REQUEST_RECEVIED_REJECTED;
+import static in.letsecho.echoapp.library.UserConnection.REQUEST_SENT;
+import static in.letsecho.echoapp.library.UserConnection.REQUEST_SENT_BLOCKED;
+import static in.letsecho.echoapp.library.UserConnection.REQUEST_SENT_REJECTED;
+import static java.lang.Boolean.TRUE;
 
 public class UserProfileFragment extends DialogFragment {
 
     private FirebaseDatabase mFirebaseDatabase;
-    private DatabaseReference mUserProfileDbRef;
+    private DatabaseReference mRootDbRef, mUserConnectionRootDbRef, mPrimaryUserConnectionDbRef, mSecondaryUserConnectionDbRef;
+    private ValueEventListener mUserConnectionEventListener;
     private FirebaseAuth mFirebaseAuth;
     private FirebaseAnalytics mFirebaseAnalytics;
     private FirebaseUser mCurrentUser;
     private View mView;
     private ImageView mPhotoImageView;
     private TextView mNameTextView, mWorkTextView, mEduTextView;
-    private ImageButton mConnectButton, mFbButton;
-    private String mUserId;
+    private Button mConnectButton;
+    private ImageButton mFbButton, mMessageButton, mAcceptButton, mRejectButton, mBlockButton;
+    private String mSecondaryUserId;
     private UserProfile mSecondaryUser;
+    private UserConnection mUserConnection;
     private int max_image_size;
 
     @Override
@@ -56,18 +72,61 @@ public class UserProfileFragment extends DialogFragment {
         mNameTextView = (TextView) mView.findViewById(R.id.nameTextView);
         mWorkTextView = (TextView) mView.findViewById(R.id.workTextView);
         mEduTextView = (TextView) mView.findViewById(R.id.eduTextView);
-        mConnectButton = (ImageButton) mView.findViewById(R.id.connectButton);
+        mFbButton = (ImageButton) mView.findViewById(R.id.fbButton);
+        mConnectButton = (Button) mView.findViewById(R.id.connectButton);
+        mMessageButton = (ImageButton) mView.findViewById(R.id.messageButton);
+        mAcceptButton = (ImageButton) mView.findViewById(R.id.acceptButton);
+        mRejectButton = (ImageButton) mView.findViewById(R.id.rejectButton);
+        mBlockButton = (ImageButton) mView.findViewById(R.id.blockButton);
         mConnectButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                // For current user
+                UserConnection primaryConnection = new UserConnection();
+                primaryConnection.setStatus(REQUEST_SENT);
+                mPrimaryUserConnectionDbRef.setValue(primaryConnection);
+                // For the other user
+                UserConnection secondaryConnection = new UserConnection();
+                secondaryConnection.setStatus(REQUEST_RECEIVED);
+                mSecondaryUserConnectionDbRef.setValue(secondaryConnection);
+            }
+        });
+        mAcceptButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                updateConnectionStatus(mCurrentUser.getUid(), mSecondaryUserId, CONNECTED);
+                updateConnectionStatus(mSecondaryUserId, mCurrentUser.getUid(), CONNECTED);
+                if(mUserConnection.getChatId() == null)
+                    createAndInsertNewChat();
+            }
+        });
+
+        mRejectButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                updateConnectionStatus(mCurrentUser.getUid(), mSecondaryUserId, REQUEST_RECEVIED_REJECTED);
+                updateConnectionStatus(mSecondaryUserId, mCurrentUser.getUid(), REQUEST_SENT_REJECTED);
+            }
+        });
+
+        mBlockButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                updateConnectionStatus(mCurrentUser.getUid(), mSecondaryUserId, REQUEST_RECEIVED_BLOCKED);
+                updateConnectionStatus(mSecondaryUserId, mCurrentUser.getUid(), REQUEST_SENT_BLOCKED);
+            }
+        });
+
+        mMessageButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
                 Intent chatIntent = new Intent(getActivity().getApplicationContext(), ChatActivity.class)
-                        .putExtra("CHAT_USER", mUserId)
+                        .putExtra("CHAT_USER", mSecondaryUserId)
                         .putExtra("TITLE", mSecondaryUser.getName());
                 startActivity(chatIntent);
                 mFirebaseAnalytics.logEvent(getString(R.string.connect_with_user_event), new Bundle());
             }
         });
-        mFbButton = (ImageButton) mView.findViewById(R.id.fbButton);
         return builder.create();
     }
 
@@ -75,77 +134,174 @@ public class UserProfileFragment extends DialogFragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Bundle bundle = getArguments();
-        mUserId = bundle.getString("secondaryUserId");
-        if(mUserId == null)
+        mSecondaryUserId = bundle.getString("secondaryUserId");
+        if(mSecondaryUserId == null)
             dismiss();
         mFirebaseDatabase = FirebaseDatabase.getInstance();
+        mRootDbRef = mFirebaseDatabase.getReference();
         mFirebaseAuth = FirebaseAuth.getInstance();
         mCurrentUser = mFirebaseAuth.getCurrentUser();
         mFirebaseAnalytics = FirebaseAnalytics.getInstance(getActivity().getApplicationContext());
-        mUserProfileDbRef = mFirebaseDatabase.getReference("users").child(mUserId);
+        mUserConnectionRootDbRef = mRootDbRef.child("chats/user_connections");
+        mPrimaryUserConnectionDbRef = mUserConnectionRootDbRef.child(mCurrentUser.getUid()).child(mSecondaryUserId);
+        mSecondaryUserConnectionDbRef = mUserConnectionRootDbRef.child(mSecondaryUserId).child(mCurrentUser.getUid());
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if(mUserConnectionEventListener == null) {
+            // Not a single value event listener because, it should get updated if the status is changed
+            mUserConnectionEventListener = new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    mUserConnection = dataSnapshot.getValue(UserConnection.class);
+                    updateActionButtons();
+                }
+
+                @Override
+                public void onCancelled(DatabaseError databaseError) {
+                }
+            };
+            mPrimaryUserConnectionDbRef.addValueEventListener(mUserConnectionEventListener);
+        }
+
+        DatabaseReference mUserProfileDbRef = mRootDbRef.child("users").child(mSecondaryUserId);
         mUserProfileDbRef.addListenerForSingleValueEvent((new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot userObj) {
                 mSecondaryUser = userObj.getValue(UserProfile.class);
-                // Set Photo
-                if (mSecondaryUser.getPhotoUrl() != null) {
-                    Glide.with(mPhotoImageView.getContext())
-                            .load(mSecondaryUser.getPhotoUrl())
-                            .into(mPhotoImageView);
-                }
-                max_image_size = mView.getWidth();
-                mPhotoImageView.setMaxWidth(max_image_size);
-                mPhotoImageView.setMaxHeight(max_image_size);
-                //Set Name
-                mNameTextView.setText(mSecondaryUser.getName());
-                // Set Work
-                for(DataSnapshot workObj: userObj.child("fbdata/work").getChildren()) {
-                    FbWork work = workObj.getValue(FbWork.class);
-                    if(work.getPosition() != null && work.getEmployer() != null)
-                        mWorkTextView.setText(work.getPosition() + " at " + work.getEmployer());
-                    else if(work.getPosition() != null)
-                        mWorkTextView.setText(work.getPosition());
-                    else if(work.getEmployer() != null)
-                        mWorkTextView.setText(work.getEmployer());
-                    break;
-                }
-                //Set Education
-                FbEducation finalEdu = null;
-                for(DataSnapshot eduObj: userObj.child("fbdata/education").getChildren()) {
-                    FbEducation edu = eduObj.getValue(FbEducation.class);
-                    if(finalEdu == null)
-                        finalEdu = edu;
-                    if(edu.getYear() != null && finalEdu.getYear() != null &&
-                            Integer.parseInt(edu.getYear()) > Integer.parseInt(finalEdu.getYear())) {
-                        finalEdu = edu;
-                    }
-                }
-                if(finalEdu != null)
-                    mEduTextView.setText(finalEdu.getSchool());
-                // Set Fb link
-                final String fbProfileId = userObj.child("fbdata/id").getValue(String.class);
-                if(fbProfileId != null)
-                mFbButton.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        Intent fbIntent = getOpenFacebookIntent(getActivity().getApplicationContext(),
-                                                                fbProfileId);
-                        startActivity(fbIntent);
-                        mFirebaseAnalytics.logEvent(getString(R.string.view_facebook_profile_event), new Bundle());
-                    }
-                });
-                else {
-                    mFbButton.setVisibility(View.INVISIBLE);
-                }
-                // Connect Button
-                if(mCurrentUser.getUid().equals(mSecondaryUser.getUID()))
-                    mConnectButton.setVisibility(View.INVISIBLE);
+                displayUserProfile(userObj);
                 logViewEvent();
             }
-
             @Override
             public void onCancelled(DatabaseError databaseError) {}
         }));
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        if(mUserConnectionEventListener != null) {
+            mPrimaryUserConnectionDbRef.removeEventListener(mUserConnectionEventListener);
+            mUserConnectionEventListener = null;
+        }
+    }
+
+    private void updateConnectionStatus(String primaryId, String secondaryId, String status) {
+        DatabaseReference connectionStatusDbRef = mUserConnectionRootDbRef.child(primaryId).child(secondaryId)
+                .child("status");
+        connectionStatusDbRef.setValue(status);
+    }
+
+    private void updateActionButtons() {
+        if(mUserConnection != null) {
+            mConnectButton.setVisibility(View.GONE);
+            switch (mUserConnection.getStatus()) {
+                case CONNECTED:
+                    mMessageButton.setVisibility(View.VISIBLE);
+                    break;
+                case REQUEST_SENT:
+                    mConnectButton.setVisibility(View.VISIBLE);
+                    mConnectButton.setEnabled(false);
+                    break;
+                case REQUEST_RECEIVED:
+                    showActionButtons();
+                    break;
+                case REQUEST_SENT_REJECTED:
+                    break;
+                case REQUEST_RECEVIED_REJECTED:
+                    showActionButtons();
+                    mRejectButton.setAlpha((float) 1.0);
+                    mAcceptButton.setAlpha((float) 0.2);
+                    mBlockButton.setAlpha((float) 0.2);
+                    break;
+                case REQUEST_SENT_BLOCKED:
+                    dismiss();
+                    break;
+                case REQUEST_RECEIVED_BLOCKED:
+                    showActionButtons();
+                    mBlockButton.setAlpha((float) 1.0);
+                    mAcceptButton.setAlpha((float) 0.2);
+                    mRejectButton.setAlpha((float) 0.2);
+                    break;
+            }
+        }
+    }
+
+    private void createAndInsertNewChat() {
+        //Insert Info
+        DatabaseReference chatInfoDbRef = mRootDbRef.child("chats/info").push();
+        Map<String, Object> users = new HashMap<String, Object>();
+        users.put(mCurrentUser.getUid(), TRUE);
+        users.put(mSecondaryUserId, TRUE);
+        chatInfoDbRef.child("users").setValue(users);
+        //Insert in User Connections
+        String chatId = chatInfoDbRef.getKey();
+        mPrimaryUserConnectionDbRef.child("chatId").setValue(chatId);
+        mSecondaryUserConnectionDbRef.child("chatId").setValue(chatId);
+    }
+
+    private void showActionButtons() {
+        mAcceptButton.setVisibility(View.VISIBLE);
+        mRejectButton.setVisibility(View.VISIBLE);
+        mBlockButton.setVisibility(View.VISIBLE);
+    }
+
+    private void displayUserProfile(DataSnapshot userObj) {
+        // Set Photo
+        if (mSecondaryUser.getPhotoUrl() != null) {
+            Glide.with(mPhotoImageView.getContext())
+                    .load(mSecondaryUser.getPhotoUrl())
+                    .into(mPhotoImageView);
+        }
+        max_image_size = mView.getWidth();
+        mPhotoImageView.setMaxWidth(max_image_size);
+        mPhotoImageView.setMaxHeight(max_image_size);
+        //Set Name
+        mNameTextView.setText(mSecondaryUser.getName());
+        // Set Work
+        for(DataSnapshot workObj: userObj.child("fbdata/work").getChildren()) {
+            FbWork work = workObj.getValue(FbWork.class);
+            if(work.getPosition() != null && work.getEmployer() != null)
+                mWorkTextView.setText(work.getPosition() + " at " + work.getEmployer());
+            else if(work.getPosition() != null)
+                mWorkTextView.setText(work.getPosition());
+            else if(work.getEmployer() != null)
+                mWorkTextView.setText(work.getEmployer());
+            break;
+        }
+        //Set Education
+        FbEducation finalEdu = null;
+        for(DataSnapshot eduObj: userObj.child("fbdata/education").getChildren()) {
+            FbEducation edu = eduObj.getValue(FbEducation.class);
+            if(finalEdu == null)
+                finalEdu = edu;
+            if(edu.getYear() != null && finalEdu.getYear() != null &&
+                    Integer.parseInt(edu.getYear()) > Integer.parseInt(finalEdu.getYear())) {
+                finalEdu = edu;
+            }
+        }
+        if(finalEdu != null)
+            mEduTextView.setText(finalEdu.getSchool());
+        // Set Fb link
+        final String fbProfileId = userObj.child("fbdata/id").getValue(String.class);
+        if(fbProfileId != null)
+            mFbButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent fbIntent = getOpenFacebookIntent(getActivity().getApplicationContext(),
+                            fbProfileId);
+                    startActivity(fbIntent);
+                    mFirebaseAnalytics.logEvent(getString(R.string.view_facebook_profile_event), new Bundle());
+                }
+            });
+        else {
+            mFbButton.setVisibility(View.INVISIBLE);
+        }
+        // Connect Button
+        if(mCurrentUser.getUid().equals(mSecondaryUser.getUID()))
+            mConnectButton.setVisibility(View.INVISIBLE);
     }
 
     public static Intent getOpenFacebookIntent(Context context, String profile_id) {
