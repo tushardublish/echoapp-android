@@ -361,7 +361,9 @@ public class ChatActivity extends AppCompatActivity {
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot) {
                     mChatId = dataSnapshot.getValue(String.class);
-                    //New Chat
+                    // New Chat
+                    // Deprecated from 1.0.16. Only used right now to handle older versions.
+                    // In newer version chat id is created on accepting request
                     if (mChatId == null) {
                         //Insert Info
                         DatabaseReference chatInfoDbRef = mChatsDbRef.child("info").push();

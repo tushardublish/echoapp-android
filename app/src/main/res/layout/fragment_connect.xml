@@ -10,12 +10,10 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="in.letsecho.echoapp.ConnectFragment">
 
-    <ListView
+    <ExpandableListView
         android:id="@+id/personListView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentStart="true"
         tools:listitem="@layout/item_person"/>
 
     <ProgressBar

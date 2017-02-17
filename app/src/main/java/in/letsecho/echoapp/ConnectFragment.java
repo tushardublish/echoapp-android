@@ -1,14 +1,14 @@
 package in.letsecho.echoapp;
 
+import android.app.DialogFragment;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.ListView;
+import android.widget.ExpandableListView;
 import android.widget.ProgressBar;
 
 import com.google.firebase.auth.FirebaseAuth;
@@ -22,57 +22,90 @@ import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import in.letsecho.echoapp.library.EntityDisplayModel;
 import in.letsecho.echoapp.library.Group;
+import in.letsecho.echoapp.library.UserConnection;
 import in.letsecho.echoapp.library.UserProfile;
 
-import static android.R.color.white;
 import static in.letsecho.echoapp.library.EntityDisplayModel.GROUP_TYPE;
 import static in.letsecho.echoapp.library.EntityDisplayModel.USER_TYPE;
+import static in.letsecho.echoapp.library.UserConnection.CONNECTED;
+import static in.letsecho.echoapp.library.UserConnection.REQUEST_RECEIVED;
 
 public class ConnectFragment extends Fragment {
 
-    private ListView mPersonListView;
-    private PersonAdapter mPersonAdapter;
+    private static String HEADER1 = "New Requests";
+    private static String HEADER2 = "Existing Connections";
+    private ExpandableListView mConnectionsListView;
+    private PersonAdapterExpandableList mConnectAdapter;
     private ProgressBar mProgressBar;
 
     private FirebaseUser mCurrentUser;
     private FirebaseAuth mFirebaseAuth;
     private FirebaseDatabase mFirebaseDatabase;
-    private DatabaseReference mRootDbRef;
+    private DatabaseReference mRootDbRef, mUserConnectionsDbRef;
     private Query mUserChatsQuery, mGroupChatsQuery;
     private ArrayList<Query> mChatDbRefs;
     private ChildEventListener mUserChatsEventListener, mGroupChatsEventListener;
     private ArrayList<ValueEventListener> mChatListeners;
-    private List<EntityDisplayModel> mPersons;
+    private List<EntityDisplayModel> mExistingConnections, mNewRequests;
+    private List<String> mSectionHeaders;
+    private HashMap<String, List<EntityDisplayModel>> mExpandableList;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_connect, container, false);
         // Initialize references to views
-        mPersonListView = (ListView) view.findViewById(R.id.personListView);
-        mPersonListView.setAdapter(mPersonAdapter);
-        mPersonListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        mConnectionsListView = (ExpandableListView) view.findViewById(R.id.personListView);
+        mConnectionsListView.setAdapter(mConnectAdapter);
+        mConnectionsListView.setOnChildClickListener(new ExpandableListView.OnChildClickListener() {
             @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                EntityDisplayModel item = mPersonAdapter.getItem(position);
-                if(item.getType() == USER_TYPE) {
-                    Intent intent = new Intent(getActivity().getApplicationContext(), ChatActivity.class)
-                            .putExtra("CHAT_USER", item.getUid())
-                            .putExtra("TITLE", item.getTitle());
-                    startActivity(intent);
+            public boolean onChildClick(ExpandableListView parent, View v, int groupPosition, int childPosition, long id) {
+                EntityDisplayModel profile = null;
+                switch(groupPosition) {
+                    case 0:
+                        profile = mNewRequests.get(childPosition);
+                        // Open Profile
+                        if(profile.getType() == USER_TYPE) {
+                            DialogFragment profileDialog = new UserProfileFragment();
+                            Bundle bundle = new Bundle();
+                            bundle.putString("secondaryUserId", profile.getUid());
+                            profileDialog.setArguments(bundle);
+                            profileDialog.show(getActivity().getFragmentManager(), "userprofile");
+                        }
+                        else if (profile.getType() == GROUP_TYPE) {
+                            DialogFragment profileDialog = new GroupProfileFragment();
+                            Bundle bundle = new Bundle();
+                            bundle.putString("groupId", profile.getUid());
+                            profileDialog.setArguments(bundle);
+                            profileDialog.show(getActivity().getFragmentManager(), "groupprofile");
+                        }
+                        break;
+                    case 1:
+                        // Open Chat
+                        profile = mExistingConnections.get(childPosition);
+                        if(profile.getType() == USER_TYPE) {
+                            Intent intent = new Intent(getActivity().getApplicationContext(), ChatActivity.class)
+                                    .putExtra("CHAT_USER", profile.getUid())
+                                    .putExtra("TITLE", profile.getTitle());
+                            startActivity(intent);
+                        }
+                        else if(profile.getType() == GROUP_TYPE) {
+                            Intent intent = new Intent(getActivity().getApplicationContext(), ChatActivity.class)
+                                    .putExtra("CHAT_GROUP", profile.getUid())
+                                    .putExtra("TITLE", profile.getTitle());
+                            startActivity(intent);
+                        }
+                        break;
                 }
-                else if(item.getType() == GROUP_TYPE) {
-                    Intent intent = new Intent(getActivity().getApplicationContext(), ChatActivity.class)
-                            .putExtra("CHAT_GROUP", item.getUid())
-                            .putExtra("TITLE", item.getTitle());
-                    startActivity(intent);
-                }
+                return true;
             }
         });
+
         // Initialize progress bar
         mProgressBar = (ProgressBar) view.findViewById(R.id.progressBar);
         mProgressBar.setVisibility(ProgressBar.INVISIBLE);
@@ -87,10 +120,22 @@ public class ConnectFragment extends Fragment {
         mFirebaseAuth = FirebaseAuth.getInstance();
         mFirebaseDatabase = FirebaseDatabase.getInstance();
         mRootDbRef = mFirebaseDatabase.getReference();
+        mUserConnectionsDbRef = mRootDbRef.child("chats/user_connections");
 
         // Initialize person ListView and its adapter
-        mPersons = new ArrayList<>();
-        mPersonAdapter = new PersonAdapter(this.getContext(), R.layout.item_person, mPersons);
+        setupExpandableList();
+    }
+
+    private void setupExpandableList() {
+        mNewRequests = new ArrayList<>();
+        mExistingConnections = new ArrayList<>();
+        mSectionHeaders = new ArrayList<>();
+        mSectionHeaders.add(HEADER1);
+        mSectionHeaders.add(HEADER2);
+        mExpandableList = new HashMap<>();
+        mExpandableList.put(HEADER1, mNewRequests);
+        mExpandableList.put(HEADER2, mExistingConnections);
+        mConnectAdapter = new PersonAdapterExpandableList(this.getContext(), mSectionHeaders, mExpandableList);
     }
 
     @Override
@@ -102,29 +147,34 @@ public class ConnectFragment extends Fragment {
         if(mCurrentUser != null) {
             attachDatabaseReadListener();
         }
+        mConnectionsListView.expandGroup(1);
     }
 
     @Override
     public void onPause() {
         super.onPause();
+        mNewRequests.clear();
+        mExistingConnections.clear();
+        mConnectAdapter.notifyDataSetChanged();
         mCurrentUser = null;
-        mPersonAdapter.clear();
         detachDatabaseReadListener();
         mChatDbRefs.clear();
         mChatListeners.clear();
     }
 
     private void attachDatabaseReadListener() {
-        mUserChatsQuery = mRootDbRef.child("chats/user_chats").child(mCurrentUser.getUid()).orderByValue().limitToLast(1000);
+        mUserChatsQuery = mUserConnectionsDbRef.child(mCurrentUser.getUid()).orderByValue().limitToLast(1000);
         if (mUserChatsEventListener == null) {
             mUserChatsEventListener = new ChildEventListener() {
                 @Override
                 public void onChildAdded(DataSnapshot dataSnapshot, String s) {
                     String secondaryUserId = dataSnapshot.getKey();
+                    UserConnection userConnection = dataSnapshot.getValue(UserConnection.class);
                     if(!secondaryUserId.equals(mCurrentUser.getUid())) {
-                        String chatId = dataSnapshot.getValue(String.class);
-                        addUserToList(secondaryUserId);
-                        setChatListener(chatId, secondaryUserId);
+                        addUserToList(secondaryUserId, userConnection);
+                        String chatId = userConnection.getChatId();
+                        if(chatId != null)      // chatId will be null for new connections, until accepted
+                            setChatListener(chatId, secondaryUserId);
                     }
                 }
 
@@ -156,19 +206,34 @@ public class ConnectFragment extends Fragment {
         }
     }
 
-    private void addUserToList(String secondaryUserId) {
-        DatabaseReference userDbRef = mRootDbRef.child("users").child(secondaryUserId);
-        userDbRef.addListenerForSingleValueEvent((new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                UserProfile secondaryUser = dataSnapshot.getValue(UserProfile.class);
-                EntityDisplayModel displayUser = new EntityDisplayModel(secondaryUser);
-                mPersonAdapter.add(displayUser);
-            }
+    private void addUserToList(String secondaryUserId, UserConnection userConnection) {
+        final String status = userConnection.getStatus();
+        if(status.equals(CONNECTED) || status.equals(REQUEST_RECEIVED)) {
+            DatabaseReference userDbRef = mRootDbRef.child("users").child(secondaryUserId);
+            userDbRef.addListenerForSingleValueEvent((new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    UserProfile secondaryUser = dataSnapshot.getValue(UserProfile.class);
+                    EntityDisplayModel displayUser = new EntityDisplayModel(secondaryUser);
+                    if(status.equals(CONNECTED)) {
+                        mExistingConnections.add(displayUser);
+                    }
+                    else if(status.equals(REQUEST_RECEIVED)) {
+                        mNewRequests.add(displayUser);
+                        // Update Header
+                        String oldHeader = mSectionHeaders.get(0);
+                        String newHeader = HEADER1 + " (" + mNewRequests.size() + ")";
+                        mSectionHeaders.set(0, newHeader);
+                        mExpandableList.put(newHeader, mExpandableList.remove(oldHeader));
+                    }
+                    mConnectAdapter.notifyDataSetChanged();
+                }
 
-            @Override
-            public void onCancelled(DatabaseError databaseError) {}
-        }));
+                @Override
+                public void onCancelled(DatabaseError databaseError) {
+                }
+            }));
+        }
     }
 
     private void addGroupToList(String groupId) {
@@ -178,7 +243,8 @@ public class ConnectFragment extends Fragment {
             public void onDataChange(DataSnapshot dataSnapshot) {
                 Group group = dataSnapshot.getValue(Group.class);
                 EntityDisplayModel displayEntity = new EntityDisplayModel(group);
-                mPersonAdapter.add(displayEntity);
+                mExistingConnections.add(displayEntity);
+                mConnectAdapter.notifyDataSetChanged();
             }
 
             @Override
@@ -194,10 +260,10 @@ public class ConnectFragment extends Fragment {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 Long unreadMessageCount = dataSnapshot.getChildrenCount();
-                int index = EntityDisplayModel.findProfileOnUid(mPersons, entityId);
+                int index = EntityDisplayModel.findProfileOnUid(mExistingConnections, entityId);
                 if(index >= 0 && unreadMessageCount > 0) {
-                    mPersons.get(index).setRightAlignedInfo(unreadMessageCount.toString());
-                    mPersonAdapter.notifyDataSetChanged();
+                    mExistingConnections.get(index).setRightAlignedInfo(unreadMessageCount.toString());
+                    mConnectAdapter.notifyDataSetChanged();
                 }
             }
 
