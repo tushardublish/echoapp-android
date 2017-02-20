@@ -14,6 +14,7 @@ import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.google.firebase.analytics.FirebaseAnalytics;
@@ -33,6 +34,7 @@ import in.letsecho.echoapp.library.FbWork;
 import in.letsecho.echoapp.library.UserConnection;
 import in.letsecho.echoapp.library.UserProfile;
 
+import static com.facebook.FacebookSdk.getApplicationContext;
 import static in.letsecho.echoapp.library.UserConnection.CONNECTED;
 import static in.letsecho.echoapp.library.UserConnection.REQUEST_RECEIVED;
 import static in.letsecho.echoapp.library.UserConnection.REQUEST_RECEIVED_BLOCKED;
@@ -98,6 +100,7 @@ public class UserProfileFragment extends DialogFragment {
                 updateConnectionStatus(mSecondaryUserId, mCurrentUser.getUid(), CONNECTED);
                 if(mUserConnection.getChatId() == null)
                     createAndInsertNewChat();
+                Toast.makeText(getApplicationContext(), "Request Accepted", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -106,6 +109,7 @@ public class UserProfileFragment extends DialogFragment {
             public void onClick(View v) {
                 updateConnectionStatus(mCurrentUser.getUid(), mSecondaryUserId, REQUEST_RECEVIED_REJECTED);
                 updateConnectionStatus(mSecondaryUserId, mCurrentUser.getUid(), REQUEST_SENT_REJECTED);
+                Toast.makeText(getApplicationContext(), "Request Rejected", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -114,6 +118,9 @@ public class UserProfileFragment extends DialogFragment {
             public void onClick(View v) {
                 updateConnectionStatus(mCurrentUser.getUid(), mSecondaryUserId, REQUEST_RECEIVED_BLOCKED);
                 updateConnectionStatus(mSecondaryUserId, mCurrentUser.getUid(), REQUEST_SENT_BLOCKED);
+                Toast.makeText(getApplicationContext(),
+                    "The other user is blocked now. Blocked users cannot open your profile or send you requests again.",
+                    Toast.LENGTH_LONG).show();
             }
         });
 

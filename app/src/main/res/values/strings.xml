@@ -20,6 +20,9 @@
     <string name="group_type_service">Service</string>
     <string name="group_type_group">Group</string>
     <string name="about_title">What is it all about?</string>
+    <string name="action_previous">Previous</string>
+    <string name="action_next">Next</string>
+    <string name="action_finish">Finish</string>
     <!--Log Events-->
     <string name="view_facebook_profile_event">view_facebook_profile</string>
     <string name="connect_with_user_event">connect_with_user</string>
@@ -28,4 +31,5 @@
     <string name="send_message_event">send_message</string>
     <string name="send_photo_event">send_photo</string>
     <string name="create_group_event">create_group</string>
+    <string name="title_activity_login">Login</string>
 </resources>
