@@ -1,5 +1,6 @@
 
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent" >
@@ -30,11 +31,21 @@
 
     <com.facebook.login.widget.LoginButton
         android:id="@+id/button_facebook_login"
+        android:layout_centerInParent="true"
+        android:layout_above="@id/separator"
+        android:layout_marginBottom="30dp"
+        android:layout_width="wrap_content"
+        style="@style/com_facebook_loginview_default_style"
+        android:layout_height="wrap_content"
+        android:textSize="20dp" />
+
+    <ProgressBar
+        android:id="@+id/progress_bar"
+        style="@android:style/Widget.DeviceDefault.Light.ProgressBar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
-        android:layout_above="@id/separator"
-        android:layout_marginBottom="30dp"/>
+        android:visibility="invisible" />
 
 </RelativeLayout>
 

@@ -4,12 +4,9 @@ import android.Manifest;
 import android.app.DialogFragment;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentSender;
 import android.content.pm.PackageManager;
-import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.ActivityCompat;
@@ -17,15 +14,11 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.widget.Toast;
 
 import com.facebook.FacebookSdk;
-import com.firebase.geofire.GeoFire;
-import com.firebase.geofire.GeoLocation;
 import com.firebase.jobdispatcher.FirebaseJobDispatcher;
 import com.firebase.jobdispatcher.GooglePlayDriver;
 import com.firebase.jobdispatcher.Job;
@@ -33,26 +26,11 @@ import com.firebase.jobdispatcher.Lifetime;
 import com.firebase.jobdispatcher.RetryStrategy;
 import com.firebase.jobdispatcher.Trigger;
 import com.firebase.ui.auth.AuthUI;
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.PendingResult;
-import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.common.api.Status;
-import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.location.LocationSettingsRequest;
-import com.google.android.gms.location.LocationSettingsResult;
-import com.google.android.gms.location.LocationSettingsStates;
-import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.iid.FirebaseInstanceId;
-
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 
 import in.letsecho.echoapp.service.LocationSyncService;
 import in.letsecho.echoapp.library.UserProfile;
@@ -165,9 +143,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private FirebaseAuth.AuthStateListener getAuthStateListener() {
-        final AuthUI.IdpConfig facebookIdp = new AuthUI.IdpConfig.Builder(AuthUI.FACEBOOK_PROVIDER)
-                .setPermissions(Arrays.asList("user_education_history", "user_work_history"))
-                .build();
         FirebaseAuth.AuthStateListener authStateListener = new FirebaseAuth.AuthStateListener() {
             @Override
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
@@ -177,40 +152,12 @@ public class MainActivity extends AppCompatActivity {
                     initializeUser();
                 } else {
                     // User is signed out
-                    startActivityForResult(
-                            AuthUI.getInstance()
-                                    .createSignInIntentBuilder()
-                                    .setIsSmartLockEnabled(false)
-                                    .setProviders(Arrays.asList(facebookIdp))
-                                    .build(),
-                            RC_SIGN_IN);
+                    Intent loginIntent = new Intent(getApplicationContext(), LoginActivity.class);
+                    startActivity(loginIntent);
                 }
             }
         };
         return authStateListener;
-    }
-
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == RC_SIGN_IN) {
-            if (resultCode == RESULT_OK) {
-                // Sign-in succeeded, set up the UI
-                // Saving user info in DB. To do: Should not happen on every sign in
-                mCurrentUser = mFirebaseAuth.getCurrentUser();
-                UserProfile userProfile = new UserProfile(mCurrentUser);
-                Map<String, Object> userMap = new HashMap<>();
-                userMap.put(mCurrentUser.getUid(), userProfile);
-                mUsersDbRef.updateChildren(userMap);
-                Toast.makeText(this, "Signed in!", Toast.LENGTH_SHORT).show();
-                setDefaultLocation();
-                initializeUser();
-            } else if (resultCode == RESULT_CANCELED) {
-                // Sign in was canceled by the user, finish the activity
-                Toast.makeText(this, "Sign in canceled", Toast.LENGTH_SHORT).show();
-                finish();
-            }
-        }
     }
 
     private void initializeUser() {
@@ -223,15 +170,6 @@ public class MainActivity extends AppCompatActivity {
         MyFirebaseInstanceIDService firebaseInstance = new MyFirebaseInstanceIDService();
         String refreshedToken = FirebaseInstanceId.getInstance().getToken();
         firebaseInstance.sendRegistrationToServer(mCurrentUser.getUid(), refreshedToken);
-    }
-
-    // Setting default location to ground zero for new users.
-    // Should be done only on signups and not signins
-    private void setDefaultLocation() {
-        DatabaseReference locationDbRef = mFirebaseDatabase.getReference("locations/current");
-        GeoFire geoFire = new GeoFire(locationDbRef);
-        GeoLocation currentGeoLocation = new GeoLocation(28.529449, 77.366762);
-        geoFire.setLocation(mCurrentUser.getUid(), currentGeoLocation);
     }
 
     private void initiateLocationSyncJob(){

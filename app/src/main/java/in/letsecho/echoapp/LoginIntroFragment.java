@@ -17,17 +17,18 @@
 package in.letsecho.echoapp;
 
 import android.app.Fragment;
+import android.content.Context;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
-import android.widget.TextView;
 
 /**
  * A fragment representing a single step in a wizard.
  */
-public class ScreenSlidePageFragment extends Fragment {
+public class LoginIntroFragment extends Fragment {
     /**
      * The argument key for the page number this fragment represents.
      */
@@ -41,15 +42,15 @@ public class ScreenSlidePageFragment extends Fragment {
     /**
      * Factory method for this fragment class. Constructs a new fragment for the given page number.
      */
-    public static ScreenSlidePageFragment create(int pageNumber) {
-        ScreenSlidePageFragment fragment = new ScreenSlidePageFragment();
+    public static LoginIntroFragment create(int pageNumber) {
+        LoginIntroFragment fragment = new LoginIntroFragment();
         Bundle args = new Bundle();
         args.putInt(ARG_PAGE, pageNumber);
         fragment.setArguments(args);
         return fragment;
     }
 
-    public ScreenSlidePageFragment() {
+    public LoginIntroFragment() {
     }
 
     @Override
@@ -63,8 +64,7 @@ public class ScreenSlidePageFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout containing a title and body text.
         ViewGroup rootView = (ViewGroup) inflater
-                .inflate(R.layout.fragment_screen_slide_page, container, false);
-
+                .inflate(R.layout.fragment_login_intro, container, false);
         LinearLayout loginLayout = (LinearLayout) rootView.findViewById(R.id.loginLayout);
         switch (mPageNumber) {
             case 0:
@@ -83,7 +83,6 @@ public class ScreenSlidePageFragment extends Fragment {
                 loginLayout.setBackgroundResource(R.drawable.mock5);
                 break;
         }
-
         return rootView;
     }
 
