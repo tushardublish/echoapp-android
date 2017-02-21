@@ -56,6 +56,8 @@ import in.letsecho.echoapp.library.UserProfile;
 import static in.letsecho.echoapp.R.id.photoImageView;
 import static in.letsecho.echoapp.library.EntityDisplayModel.GROUP_TYPE;
 import static in.letsecho.echoapp.library.EntityDisplayModel.USER_TYPE;
+import static in.letsecho.echoapp.library.UserConnection.REQUEST_RECEIVED;
+import static in.letsecho.echoapp.library.UserConnection.REQUEST_SENT;
 import static java.lang.Boolean.TRUE;
 
 public class ChatActivity extends AppCompatActivity {
@@ -83,7 +85,7 @@ public class ChatActivity extends AppCompatActivity {
     private int mChatType;
 
     private FirebaseDatabase mFirebaseDatabase;
-    private DatabaseReference mChatsDbRef, mOtherEntityDbRef;
+    private DatabaseReference mChatsDbRef, mOtherEntityDbRef, mUserConnectionRootDbRef;
     private DatabaseReference mCurrentUserChatDbRef, mCurrentChatDbRef;
     private ChildEventListener mMessageEventListener;
     private ValueEventListener mCurrentUserChatsEventListener;
@@ -104,6 +106,7 @@ public class ChatActivity extends AppCompatActivity {
         mFirebaseStorage = FirebaseStorage.getInstance();
         mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
         mChatsDbRef = mFirebaseDatabase.getReference().child("chats");
+        mUserConnectionRootDbRef = mChatsDbRef.child("user_connections");
         mChatPhotosStorageReference = mFirebaseStorage.getReference().child("chat_photos");
 
         // Initialize references to views
@@ -363,13 +366,13 @@ public class ChatActivity extends AppCompatActivity {
                 public void onDataChange(DataSnapshot dataSnapshot) {
                     if(mChatType == CHAT_USER) {
                         UserConnection userConnection = dataSnapshot.getValue(UserConnection.class);
-                        mChatId = userConnection.getChatId();
+                        if(userConnection != null)  // if connection does not exist, giving flexibility to application
+                            mChatId = userConnection.getChatId();
                     } else if (mChatType == CHAT_GROUP) {
                         mChatId = dataSnapshot.getValue(String.class);
                     }
-                    // New Chat
-                    // Deprecated from 1.0.16. Only used right now to handle older versions.
-                    // In newer version chat id is created on accepting request
+                    // Even though the chatId is usually create during connection,
+                    // but this is required to handle other type of spontaneous connections like message owner
                     if (mChatId == null) {
                         //Insert Info
                         DatabaseReference chatInfoDbRef = mChatsDbRef.child("info").push();
@@ -377,10 +380,26 @@ public class ChatActivity extends AppCompatActivity {
                         users.put(mCurrentUser.getUid(), TRUE);
                         users.put(mSecondaryUid, TRUE);
                         chatInfoDbRef.child("users").setValue(users);
-                        //Insert User Chats
+                        // Insert User Chats
+                        // Deprecated from 1.0.16. Only used right now to handle older versions.
                         mChatId = chatInfoDbRef.getKey();
                         mChatsDbRef.child("user_chats").child(mCurrentUser.getUid()).child(mSecondaryUid).setValue(mChatId);
                         mChatsDbRef.child("user_chats").child(mSecondaryUid).child(mCurrentUser.getUid()).setValue(mChatId);
+                        // Insert User Connections
+                        // For current user
+                        UserConnection primaryConnection = new UserConnection();
+                        primaryConnection.setStatus(REQUEST_SENT);
+                        primaryConnection.setChatId(mChatId);
+                        DatabaseReference mPrimaryUserConnectionDbRef = mUserConnectionRootDbRef
+                                .child(mCurrentUser.getUid()).child(mSecondaryUid);
+                        mPrimaryUserConnectionDbRef.setValue(primaryConnection);
+                        // For the other user
+                        UserConnection secondaryConnection = new UserConnection();
+                        secondaryConnection.setStatus(REQUEST_RECEIVED);
+                        secondaryConnection.setChatId(mChatId);
+                        DatabaseReference mSecondaryUserConnectionDbRef = mUserConnectionRootDbRef
+                                .child(mSecondaryUid).child(mCurrentUser.getUid());
+                        mSecondaryUserConnectionDbRef.setValue(secondaryConnection);
                     }
 
                     if(mMessageEventListener == null) {

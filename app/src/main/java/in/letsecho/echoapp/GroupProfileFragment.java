@@ -30,9 +30,13 @@ import java.util.Map;
 
 import in.letsecho.echoapp.library.Admin;
 import in.letsecho.echoapp.library.Group;
+import in.letsecho.echoapp.library.UserConnection;
 
 import static com.facebook.FacebookSdk.getApplicationContext;
+import static in.letsecho.echoapp.library.UserConnection.REQUEST_RECEIVED;
+import static in.letsecho.echoapp.library.UserConnection.REQUEST_SENT;
 import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
 
 public class GroupProfileFragment extends DialogFragment {
 
@@ -136,6 +140,7 @@ public class GroupProfileFragment extends DialogFragment {
                     mMessageOwnerButton.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
+                            // Redirect to chat
                             Intent chatIntent = new Intent(getActivity().getApplicationContext(), ChatActivity.class)
                                     .putExtra("CHAT_USER", group.getOwnerId())
                                     .putExtra("TITLE", group.getOwnerName());
