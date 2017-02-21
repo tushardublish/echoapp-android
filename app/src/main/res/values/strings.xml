@@ -23,6 +23,7 @@
     <string name="action_previous">Previous</string>
     <string name="action_next">Next</string>
     <string name="action_finish">Finish</string>
+    <string name="login_with_facebook">Login with Facebook</string>
     <!--Log Events-->
     <string name="view_facebook_profile_event">view_facebook_profile</string>
     <string name="connect_with_user_event">connect_with_user</string>

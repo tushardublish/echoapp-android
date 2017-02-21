@@ -42,7 +42,7 @@ public class MainActivity extends AppCompatActivity {
 
     private static String TAG = "MainActivity";
     public static final int RC_SIGN_IN = 1;
-    private static final int MY_PERMISSION_ACCESS_COURSE_LOCATION = 2;
+    private static final int MY_PERMISSION_ACCESS_COURSE_LOCATION = 1;
 
     private FirebaseDatabase mFirebaseDatabase;
     private DatabaseReference mUsersDbRef;

@@ -14,16 +14,13 @@ import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 
 import android.text.Html;
-import android.util.Log;
 import android.view.View;
-import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.facebook.FacebookSdk;
-import com.facebook.login.widget.LoginButton;
 import com.firebase.geofire.GeoFire;
 import com.firebase.geofire.GeoLocation;
 import com.firebase.ui.auth.AuthUI;
@@ -55,13 +52,13 @@ public class LoginActivity extends FragmentActivity {
     private PagerAdapter mPagerAdapter;
     private TextView[] dots;
     private LinearLayout dotsLayout;
-    private LoginButton mLoginButton;
+    private Button mLoginButton;
     private ProgressBar mProgressBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        FacebookSdk.sdkInitialize(getApplicationContext());
+//        FacebookSdk.sdkInitialize(getApplicationContext());
         setContentView(R.layout.activity_login);
 
         // Initialize Firebase components
@@ -80,14 +77,13 @@ public class LoginActivity extends FragmentActivity {
             }
         });
         mProgressBar = (ProgressBar) findViewById(R.id.progress_bar);
-        mLoginButton = (LoginButton) findViewById(R.id.button_facebook_login);
+        mLoginButton = (Button) findViewById(R.id.button_facebook_login);
         final AuthUI.IdpConfig facebookIdp = new AuthUI.IdpConfig.Builder(AuthUI.FACEBOOK_PROVIDER)
                 .setPermissions(Arrays.asList("user_education_history", "user_work_history"))
                 .build();
         mLoginButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mLoginButton.setVisibility(View.INVISIBLE);
                 mProgressBar.setVisibility(View.VISIBLE);
                 startActivityForResult(
                         AuthUI.getInstance()
@@ -153,7 +149,7 @@ public class LoginActivity extends FragmentActivity {
             } else if (resultCode == RESULT_CANCELED) {
                 // Sign in was canceled by the user, finish the activity
                 Toast.makeText(this, "Sign in canceled", Toast.LENGTH_SHORT).show();
-                mLoginButton.setVisibility(View.VISIBLE);
+                mProgressBar.setVisibility(View.INVISIBLE);
             }
         }
     }

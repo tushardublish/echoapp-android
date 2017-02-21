@@ -29,15 +29,16 @@
         android:layout_above="@id/layoutDots"
         android:background="@color/grey_300" />
 
-    <com.facebook.login.widget.LoginButton
+    <Button
         android:id="@+id/button_facebook_login"
         android:layout_centerInParent="true"
         android:layout_above="@id/separator"
         android:layout_marginBottom="30dp"
         android:layout_width="wrap_content"
-        style="@style/com_facebook_loginview_default_style"
+        style="@style/FirebaseUI.Button.AccountChooser.FacebookButton"
         android:layout_height="wrap_content"
-        android:textSize="20dp" />
+        android:textSize="20sp"
+        android:text="@string/login_with_facebook" />
 
     <ProgressBar
         android:id="@+id/progress_bar"
