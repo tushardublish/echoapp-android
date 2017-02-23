@@ -34,6 +34,8 @@ import static in.letsecho.echoapp.library.EntityDisplayModel.GROUP_TYPE;
 import static in.letsecho.echoapp.library.EntityDisplayModel.USER_TYPE;
 import static in.letsecho.echoapp.library.UserConnection.CONNECTED;
 import static in.letsecho.echoapp.library.UserConnection.REQUEST_RECEIVED;
+import static in.letsecho.echoapp.library.UserConnection.REQUEST_RECEIVED_ACCEPTED;
+import static in.letsecho.echoapp.library.UserConnection.REQUEST_SENT_ACCEPTED;
 
 public class ConnectFragment extends Fragment {
 
@@ -208,14 +210,16 @@ public class ConnectFragment extends Fragment {
 
     private void addUserToList(String secondaryUserId, UserConnection userConnection) {
         final String status = userConnection.getStatus();
-        if(status.equals(CONNECTED) || status.equals(REQUEST_RECEIVED)) {
+        if(status.equals(CONNECTED) || status.equals(REQUEST_RECEIVED_ACCEPTED) ||
+        status.equals(REQUEST_SENT_ACCEPTED)|| status.equals(REQUEST_RECEIVED)) {
             DatabaseReference userDbRef = mRootDbRef.child("users").child(secondaryUserId);
             userDbRef.addListenerForSingleValueEvent((new ValueEventListener() {
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot) {
                     UserProfile secondaryUser = dataSnapshot.getValue(UserProfile.class);
                     EntityDisplayModel displayUser = new EntityDisplayModel(secondaryUser);
-                    if(status.equals(CONNECTED)) {
+                    if(status.equals(CONNECTED) || status.equals(REQUEST_RECEIVED_ACCEPTED) ||
+                            status.equals(REQUEST_SENT_ACCEPTED)) {
                         mExistingConnections.add(displayUser);
                     }
                     else if(status.equals(REQUEST_RECEIVED)) {

@@ -37,9 +37,11 @@ import in.letsecho.echoapp.library.UserProfile;
 import static com.facebook.FacebookSdk.getApplicationContext;
 import static in.letsecho.echoapp.library.UserConnection.CONNECTED;
 import static in.letsecho.echoapp.library.UserConnection.REQUEST_RECEIVED;
+import static in.letsecho.echoapp.library.UserConnection.REQUEST_RECEIVED_ACCEPTED;
 import static in.letsecho.echoapp.library.UserConnection.REQUEST_RECEIVED_BLOCKED;
 import static in.letsecho.echoapp.library.UserConnection.REQUEST_RECEVIED_REJECTED;
 import static in.letsecho.echoapp.library.UserConnection.REQUEST_SENT;
+import static in.letsecho.echoapp.library.UserConnection.REQUEST_SENT_ACCEPTED;
 import static in.letsecho.echoapp.library.UserConnection.REQUEST_SENT_BLOCKED;
 import static in.letsecho.echoapp.library.UserConnection.REQUEST_SENT_REJECTED;
 import static java.lang.Boolean.TRUE;
@@ -96,8 +98,8 @@ public class UserProfileFragment extends DialogFragment {
         mAcceptButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                updateConnectionStatus(mCurrentUser.getUid(), mSecondaryUserId, CONNECTED);
-                updateConnectionStatus(mSecondaryUserId, mCurrentUser.getUid(), CONNECTED);
+                updateConnectionStatus(mCurrentUser.getUid(), mSecondaryUserId, REQUEST_RECEIVED_ACCEPTED);
+                updateConnectionStatus(mSecondaryUserId, mCurrentUser.getUid(), REQUEST_SENT_ACCEPTED);
                 if(mUserConnection.getChatId() == null)
                     createAndInsertNewChat();
                 Toast.makeText(getApplicationContext(), "Request Accepted", Toast.LENGTH_SHORT).show();
@@ -205,7 +207,9 @@ public class UserProfileFragment extends DialogFragment {
         if(mUserConnection != null) {
             mConnectButton.setVisibility(View.GONE);
             switch (mUserConnection.getStatus()) {
-                case CONNECTED:
+                case REQUEST_SENT_ACCEPTED:
+                case REQUEST_RECEIVED_ACCEPTED:
+                case CONNECTED: // CONNECTED is Deprecated from 1.0.17
                     setActionButtonsVisibility(View.GONE);
                     mMessageButton.setVisibility(View.VISIBLE);
                     // Fb button visible on connected and all received types and none sent types

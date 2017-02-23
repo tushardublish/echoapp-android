@@ -2,6 +2,7 @@ package in.letsecho.echoapp;
 
 
 import android.app.DialogFragment;
+import android.content.Intent;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -134,6 +135,19 @@ public class ExploreFragment extends Fragment {
         // Explanding the lists
         for(int i=0; i<mExploreAdapter.getGroupCount(); i++)
             mExploreListView.expandGroup(i);
+
+        // Manage if opened by intents
+        Intent intent = getActivity().getIntent();
+        if(intent != null) {
+            if(intent.hasExtra("PROFILE_ID")) {
+                String profileId = intent.getStringExtra("PROFILE_ID");
+                DialogFragment profileDialog = new UserProfileFragment();
+                Bundle bundle = new Bundle();
+                bundle.putString("secondaryUserId", profileId);
+                profileDialog.setArguments(bundle);
+                profileDialog.show(getActivity().getFragmentManager(), "userprofile");
+            }
+        }
     }
 
     @Override

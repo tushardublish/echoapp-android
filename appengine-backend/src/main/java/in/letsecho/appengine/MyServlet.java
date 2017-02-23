@@ -31,23 +31,31 @@ import javax.servlet.ServletConfig;
 import javax.servlet.http.*;
 
 import in.letsecho.appengine.library.ChatMessage;
+import in.letsecho.appengine.library.UserConnection;
+import in.letsecho.appengine.library.UserProfile;
+
+import static in.letsecho.appengine.library.UserConnection.CONNECTED;
+import static in.letsecho.appengine.library.UserConnection.REQUEST_RECEIVED;
+import static in.letsecho.appengine.library.UserConnection.REQUEST_SENT_ACCEPTED;
 
 
 public class MyServlet extends HttpServlet {
 
     private static String TAG = "MyServletNotifications";
     private String apiKey;
-    private DatabaseReference rootDbRef, chatDbRef;
-    private ArrayList<DatabaseReference> messageDbRefList;
-    private ChildEventListener chatEventListener;
-    private ArrayList<ChildEventListener> messageEventListenerList;
+    private DatabaseReference rootDbRef, chatDbRef, userConnectionsRootDbRef;
+    private ArrayList<DatabaseReference> messageDbRefList, userConnectionsDbRefList;
+    private ChildEventListener chatEventListener, userConnectionUsersEventListener;
+    private ArrayList<ChildEventListener> messageEventListenerList, userConnectionsEventListenerList;
     private HashMap<String, List<String>> chatUsers;
-    private HashMap<String, String> userInstances;
+    private HashMap<String, UserProfile> userProfiles;
 
     @Override
     public void init(ServletConfig config) {
         messageDbRefList = new ArrayList<>();
         messageEventListenerList = new ArrayList<>();
+        userConnectionsDbRefList = new ArrayList<>();
+        userConnectionsEventListenerList = new ArrayList<>();
         String credential = config.getInitParameter("credential");
         String databaseUrl = config.getInitParameter("databaseUrl");
         apiKey = config.getInitParameter("apiKey");
@@ -61,12 +69,14 @@ public class MyServlet extends HttpServlet {
         rootDbRef = firebaseDb.getReference();
         // Notifications
         chatUsers = getUsersFromChat();
-        userInstances = getUserInstances();
+        userProfiles = getUsersInfo();
         sendMessageNotifications();
+        sendRequestNotifications();
         // Schema Change - User Connections (18th Feb 2017, v 1.0.16)
         MigrateUserConnections();
     }
 
+    // Beginning of Message Notifications
     private void sendMessageNotifications() {
         chatDbRef = rootDbRef.child("chats").child("messages");
         if(chatEventListener == null) {
@@ -132,9 +142,9 @@ public class MyServlet extends HttpServlet {
     }
 
     private void sendNotificationToUser(String userId, ChatMessage message) throws Exception{
-        String instanceId = userInstances.get(userId);
+        String instanceId = userProfiles.get(userId).getInstanceId();
         if(instanceId == null)  //if instanceId has not been inserted then send it to tushar. Remove it later.
-            instanceId = userInstances.get("vBnYd7839IMcCw0H5XaELsnMVfD2");
+            instanceId = userProfiles.get("vBnYd7839IMcCw0H5XaELsnMVfD2").getInstanceId();
         String url = "https://fcm.googleapis.com/fcm/send";
         URL urlObj = new URL(url);
         HttpURLConnection con = (HttpURLConnection) urlObj.openConnection();
@@ -182,6 +192,160 @@ public class MyServlet extends HttpServlet {
         System.out.println("Post Data : " + postJsonData);
         System.out.println("Response Code : " + responseCode);
     }
+    // End of Message Notifications
+
+    // Beginning of Connection Notifications
+    private void sendRequestNotifications() {
+        userConnectionsRootDbRef = rootDbRef.child("chats/user_connections");
+        if(userConnectionUsersEventListener == null) {
+            userConnectionUsersEventListener = new ChildEventListener() {
+                @Override
+                public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+                    String primaryUserId = dataSnapshot.getKey();
+                    DatabaseReference userConnetionsDbRef = userConnectionsRootDbRef.child(primaryUserId);
+                    ChildEventListener userConnectionsEventListener = getUserConnectionsListener(primaryUserId);
+                    userConnetionsDbRef.addChildEventListener(userConnectionsEventListener);
+                    userConnectionsDbRefList.add(userConnetionsDbRef);
+                    userConnectionsEventListenerList.add(userConnectionsEventListener);
+                }
+                @Override
+                public void onChildChanged(DataSnapshot dataSnapshot, String s) {}
+                @Override
+                public void onChildRemoved(DataSnapshot dataSnapshot) {}
+                @Override
+                public void onChildMoved(DataSnapshot dataSnapshot, String s) {}
+                @Override
+                public void onCancelled(DatabaseError databaseError) {}
+            };
+            userConnectionsRootDbRef.addChildEventListener(userConnectionUsersEventListener);
+        }
+    }
+
+    private ChildEventListener getUserConnectionsListener(final String primaryUserId) {
+        ChildEventListener userConnectionsEventListener = new ChildEventListener() {
+            @Override
+            public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+                String secondaryUserId = dataSnapshot.getKey();
+                UserConnection connection = dataSnapshot.getValue(UserConnection.class);
+                if(connection.getStatus().equals(REQUEST_RECEIVED) && connection.getNotified() == null) {
+                    try {
+                        sendRequestReceivedNotification(primaryUserId, secondaryUserId);
+                        HashMap<String, Object> connectionUpdate = new HashMap<>();
+                        connectionUpdate.put("notified", true);
+                        userConnectionsRootDbRef.child(primaryUserId).child(secondaryUserId)
+                                .updateChildren(connectionUpdate);
+                    } catch (Exception e) {
+                        Log.w(TAG, "Error in Sending Notification. Error: " + e.toString());
+                    }
+                }
+            }
+
+            @Override
+            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+                String secondaryUserId = dataSnapshot.getKey();
+                UserConnection connection = dataSnapshot.getValue(UserConnection.class);
+                if(connection.getStatus().equals(REQUEST_SENT_ACCEPTED) && connection.getNotified() == null) {
+                    try {
+                        sendRequestAcceptedNotification(primaryUserId, secondaryUserId);
+                        HashMap<String, Object> connectionUpdate = new HashMap<>();
+                        connectionUpdate.put("notified", true);
+                        userConnectionsRootDbRef.child(primaryUserId).child(secondaryUserId)
+                                .updateChildren(connectionUpdate);
+                    } catch (Exception e) {
+                        Log.w(TAG, "Error in Sending Notification. Error: " + e.toString());
+                    }
+                }
+            }
+            @Override
+            public void onChildRemoved(DataSnapshot dataSnapshot) {}
+            @Override
+            public void onChildMoved(DataSnapshot dataSnapshot, String s) {}
+            @Override
+            public void onCancelled(DatabaseError databaseError) {}
+        };
+        return userConnectionsEventListener;
+    }
+
+    private void sendRequestReceivedNotification(String primaryUserId, String secondaryUserId) throws Exception{
+        String instanceId = userProfiles.get(primaryUserId).getInstanceId();
+        if(instanceId == null)  //if instanceId has not been inserted then send it to tushar. Remove it later.
+            instanceId = userProfiles.get("vBnYd7839IMcCw0H5XaELsnMVfD2").getInstanceId();
+        String url = "https://fcm.googleapis.com/fcm/send";
+        URL urlObj = new URL(url);
+        HttpURLConnection con = (HttpURLConnection) urlObj.openConnection();
+
+        // Setting basic post request
+        con.setRequestMethod("POST");
+        con.setRequestProperty("Content-Type", "application/json");
+        con.setRequestProperty("Authorization", "key=" + apiKey);
+
+        JsonObject obj = new JsonObject();
+        obj.addProperty("to", instanceId);
+        obj.addProperty("priority", "high");
+        JsonObject notification = new JsonObject();
+        notification.addProperty("title", "New Connection Request");
+        notification.addProperty("body", userProfiles.get(secondaryUserId).getName());
+        notification.addProperty("sound", "default");
+        notification.addProperty("click_action", "in.letsecho.echoapp.MAININTENT");
+        obj.add("notification", notification);
+        JsonObject data = new JsonObject();
+        data.addProperty("PROFILE_ID", secondaryUserId);
+        obj.add("data", data);
+        String postJsonData = obj.toString();
+
+        // Send post request
+        con.setDoOutput(true);
+        DataOutputStream wr = new DataOutputStream(con.getOutputStream());
+        wr.writeBytes(postJsonData);
+        wr.flush();
+        wr.close();
+
+        int responseCode = con.getResponseCode();
+        System.out.println("\nSending 'POST' request to URL : " + url);
+        System.out.println("Post Data : " + postJsonData);
+        System.out.println("Response Code : " + responseCode);
+    }
+
+    private void sendRequestAcceptedNotification(String primaryUserId, String secondaryUserId) throws Exception{
+        String instanceId = userProfiles.get(primaryUserId).getInstanceId();
+        if(instanceId == null)  //if instanceId has not been inserted then send it to tushar. Remove it later.
+            instanceId = userProfiles.get("vBnYd7839IMcCw0H5XaELsnMVfD2").getInstanceId();
+        String url = "https://fcm.googleapis.com/fcm/send";
+        URL urlObj = new URL(url);
+        HttpURLConnection con = (HttpURLConnection) urlObj.openConnection();
+
+        // Setting basic post request
+        con.setRequestMethod("POST");
+        con.setRequestProperty("Content-Type", "application/json");
+        con.setRequestProperty("Authorization", "key=" + apiKey);
+
+        JsonObject obj = new JsonObject();
+        obj.addProperty("to", instanceId);
+        obj.addProperty("priority", "high");
+        JsonObject notification = new JsonObject();
+        notification.addProperty("title", "Connection Request Accepted");
+        notification.addProperty("body", userProfiles.get(secondaryUserId).getName());
+        notification.addProperty("sound", "default");
+        notification.addProperty("click_action", "in.letsecho.echoapp.MAININTENT");
+        obj.add("notification", notification);
+        JsonObject data = new JsonObject();
+        data.addProperty("PROFILE_ID", secondaryUserId);
+        obj.add("data", data);
+        String postJsonData = obj.toString();
+
+        // Send post request
+        con.setDoOutput(true);
+        DataOutputStream wr = new DataOutputStream(con.getOutputStream());
+        wr.writeBytes(postJsonData);
+        wr.flush();
+        wr.close();
+
+        int responseCode = con.getResponseCode();
+        System.out.println("\nSending 'POST' request to URL : " + url);
+        System.out.println("Post Data : " + postJsonData);
+        System.out.println("Response Code : " + responseCode);
+    }
+
 
     private HashMap getUsersFromChat() {
         final HashMap<String, List<String>> chatList = new HashMap<>();
@@ -217,21 +381,21 @@ public class MyServlet extends HttpServlet {
         return chatList;
     }
 
-    private HashMap getUserInstances() {
-        final HashMap<String, String> instanceIds = new HashMap<>();
+    private HashMap getUsersInfo() {
+        final HashMap<String, UserProfile> userProfiles = new HashMap<>();
         DatabaseReference userRef = rootDbRef.child("users");
         userRef.addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(DataSnapshot user, String s) {
                 String userId = user.getKey();
-                String instanceId = user.child("instanceId").getValue(String.class);
-                instanceIds.put(userId, instanceId);
+                UserProfile userObj = user.getValue(UserProfile.class);
+                userProfiles.put(userId, userObj);
             }
             @Override
             public void onChildChanged(DataSnapshot user, String s) {
                 String userId = user.getKey();
-                String instanceId = user.child("instanceId").getValue(String.class);
-                instanceIds.put(userId, instanceId);
+                UserProfile userObj = user.getValue(UserProfile.class);
+                userProfiles.put(userId, userObj);
             }
             @Override
             public void onChildRemoved(DataSnapshot dataSnapshot) {}
@@ -240,7 +404,7 @@ public class MyServlet extends HttpServlet {
             @Override
             public void onCancelled(DatabaseError databaseError) {}
         });
-        return instanceIds;
+        return userProfiles;
     }
 
     private void MigrateUserConnections() {
@@ -272,7 +436,7 @@ public class MyServlet extends HttpServlet {
             String chatId = chat.getValue(String.class);
             HashMap<String, Object> singleConnectionMap = new HashMap<>();
             singleConnectionMap.put("chatId", chatId);
-            singleConnectionMap.put("status", "Connected");
+            singleConnectionMap.put("status", CONNECTED);
             userConnectionsMap.put(secondaryUID, singleConnectionMap);
         }
         userConnectionsDbRef.child(primaryUID).updateChildren(userConnectionsMap);

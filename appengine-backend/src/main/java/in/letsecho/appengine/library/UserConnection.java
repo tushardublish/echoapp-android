@@ -1,4 +1,4 @@
-package in.letsecho.echoapp.library;
+package in.letsecho.appengine.library;
 
 public class UserConnection {
     public static final String REQUEST_SENT = "RequestSent";
@@ -9,12 +9,12 @@ public class UserConnection {
     public static final String REQUEST_RECEIVED_BLOCKED = "RequestReceivedBlocked";
     public static final String REQUEST_SENT_ACCEPTED = "RequestSentAccepted";
     public static final String REQUEST_RECEIVED_ACCEPTED = "RequestReceivedAccepted";
-    public static final String CONNECTED = "Connected"; // Deprecated in 1.0.17
-    //CONNECTED should be changed to REQUEST_RECEIVED_ACCEPTED in db and this should be removed in future
+    public static final String CONNECTED = "Connected";
 
     private String chatId;
     private String status;
     private Long timestamp;
+    private Boolean notified;
 
     public UserConnection() {}
 
@@ -40,5 +40,13 @@ public class UserConnection {
 
     public void setTimestamp(Long timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public Boolean getNotified() {
+        return notified;
+    }
+
+    public void setNotified(Boolean notified) {
+        this.notified = notified;
     }
 }
